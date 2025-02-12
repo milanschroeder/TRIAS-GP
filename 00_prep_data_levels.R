@@ -6,6 +6,8 @@
 library(tidyverse)
 library(magrittr)
 
+data_path <- "~/Nextcloud/Shared/TRIAS Brückenprojekt/Daten/cleaned_data/"
+
 # get data from DB: ####
 
 source("../00_connectDB.R") # custom DB connection file in parent directory
@@ -36,17 +38,13 @@ data_doclevel <- DBI::dbReadTable(con, "all_meta") %>%
   ) %>% 
   ungroup()
 
-write_rds(data_doclevel, "../data/data_doclevel_clean.rds")
+
+write_rds(data_doclevel, paste0(data_path, "data_doclevel.rds"))
 
 dbDisconnect(con)
 rm(con, data_paralevel)
 gc()
 
-write_rds(data_doclevel, "../data/data_doclevel.rds")
-
-data_doclevel %>% filter(doc_key == "statement_23_1787") %>% 
-  tidyr::separate_rows(text_doc, sep = "\n\n") %>% # split at newline
-  rename(text_para = text_doc) %>% view()
 
 # run on kalliope:
 {
@@ -374,7 +372,9 @@ all_paras <-
          n_chars_doc = sum(n_chars_para)) %>% 
   ungroup()
 
-write_rds(all_paras, "../data/paras_newsplit.rds")
+write_rds(all_paras, paste0(data_path, "data_paralevel.rds"))
+
+
 
 # tokenize sentences ####
 
@@ -395,5 +395,7 @@ data_sentlevel <-
   mutate(n_sentence_doc = n()) %>% 
   ungroup()
 
-write_rds(data_sentlevel, "../data/data_sentlevel.rds")
+
+write_rds(data_sentlevel, paste0(data_path, "data_sentlevel.rds"))
+
 
