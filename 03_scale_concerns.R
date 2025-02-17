@@ -9,9 +9,9 @@ library(magrittr)
 # data ####
 data_path <- "~/Nextcloud/Shared/TRIAS Brückenprojekt/Daten/cleaned_data/"
 
-docs <- read_rds(paste0(data_path, "data_doclevel.rds"))
-paras <- read_rds(paste0(data_path, "data_paralevel.rds"))
-sents <- read_rds(paste0(data_path, "data_sentlevel.rds"))
+# docs <- read_rds(paste0(data_path, "data_doclevel.rds"))
+# paras <- read_rds(paste0(data_path, "data_paralevel.rds"))
+# sents <- read_rds(paste0(data_path, "data_sentlevel.rds"))
 
 
 ######
@@ -151,6 +151,7 @@ left_join(
 
 write_rds(tokens_sents, paste0(data_path, "scaling_glove_sentlevel.rds"))
 rm(tokens_sents)
+gc()
 
 tokens_para <- 
     read_rds(paste0(data_path, "data_paralevel.rds")) %>% select(text = text_para, para_id) %>% 
@@ -180,7 +181,7 @@ rm(tokens_para)
 
   
 tokens_doc <- 
-  read_rds(paste0(data_path, "data_doclevel.rds")) %>% select(text = text_doc, id = doc_id) %>% 
+  read_rds(paste0(data_path, "data_doclevel.rds")) %>% select(text = text_doc, doc_id) %>% 
   mutate(text = str_remove_all(text, "\'|’|#|\\.|[0-9]"), # choose to just remove . as u.s. much more relvant than www.ec.europa.eu
          text = str_replace_all(text, "_|-", " ")) %>% 
   unnest_tokens(input = text, # name of text var
