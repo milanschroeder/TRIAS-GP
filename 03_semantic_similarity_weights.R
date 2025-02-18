@@ -12,6 +12,31 @@ library(ggwordcloud)
 library(quanteda) # Quantitative Analysis of Textual Data, CRAN v3.3.1
 library(readxl)
 
+set.seed(1905)
+data_path <- "~/Nextcloud/Shared/TRIAS Brückenprojekt/Daten/"
+
+# key geographical entities to remove before scaling:
+geo_entities <- c(c(newsmap::data_dictionary_newsmap_en %>% unlist(),
+                    newsmap::data_dictionary_newsmap_ar %>% unlist(),
+                    newsmap::data_dictionary_newsmap_de %>% unlist(),
+                    newsmap::data_dictionary_newsmap_es %>% unlist(),
+                    newsmap::data_dictionary_newsmap_fr %>% unlist(),
+                    newsmap::data_dictionary_newsmap_he %>% unlist(),
+                    newsmap::data_dictionary_newsmap_it %>% unlist(),
+                    newsmap::data_dictionary_newsmap_ja %>% unlist(),
+                    newsmap::data_dictionary_newsmap_pt %>% unlist(),
+                    newsmap::data_dictionary_newsmap_pt %>% unlist(),
+                    newsmap::data_dictionary_newsmap_ru %>% unlist(),
+                    newsmap::data_dictionary_newsmap_zh_cn %>% unlist(),
+                    newsmap::data_dictionary_newsmap_zh_tw %>% unlist()
+) %>% tibble(entities = .) %>% 
+  mutate(entities = ifelse(str_length(entities %>% str_remove("\\*")) < 6 | str_detect(entities, "\\*"), 
+                           paste0("\\b", entities %>% str_remove("\\*"), "\\b"),
+                           entities %>% str_remove("\\*"))) %>% 
+  filter(str_detect(entities, "\\bus\\b", negate = T)) %>%  # remove us bc false positives
+  pull(entities) %>% unique(),
+"afri", "\\beurop", "americ", "oceania", "asian", "\\busa\\b")
+
 
 # TO DOs / Ideas
 # Filter out country markers from term weights - countries should not push into any substantial direction
@@ -33,10 +58,11 @@ library(readxl)
 # I have parsed this for other purposes already, if you start from the raw file see:
 # https://gist.github.com/tjvananne/8b0e7df7dcad414e8e6d5bf3947439a9
 
-glove.300 <- read_rds("C:/Users/chris/Downloads/glove.6B.300d.rds") # HP path
+# glove.300 <- read_rds("C:/Users/chris/Downloads/glove.6B.300d.rds") # HP path
 # glove.300 <- read_rds("C:/Users/rauh/Downloads/glove.6B.300d.rds") # ThinkPad path
 # glove.300 <- read_rds("C:/Users/rauh/Downloads/glove.6B.300d.rds") # WZB path
 
+glove.300 <- read_rds("../LargeData/glove.6B.300d.rds")
 
 # Clean up the vocabulary a bit (lots of rare trash in there, exclude stopwords)
 vocab <- names(glove.300) %>% 
@@ -46,9 +72,11 @@ vocab <- names(glove.300) %>%
   filter(nchar(token) > 1) %>% 
   filter(!(token %in% stopwords("english"))) %>% 
   filter(!str_detect(token, "\\.")) %>% 
-  filter(!str_detect(token, "[0-9]"))
+  filter(!str_detect(token, "[0-9]")) %>% 
+  filter(!str_detect(token, geo_entities %>% paste(collapse = "|"))) # Remove country/continent names - they should not affect the scale
+ # filter(token %in% geo_entities) 
 glove.300 <- glove.300 %>% select(vocab$token)
-
+rm(vocab)
 
 
 
@@ -101,21 +129,21 @@ dp_simils <-
 
 # Export token weights
 # Export semantic similarity dictionary ####
-write_rds(dp_simils, "./large_data/SemSimilWeights-DigitalitySimple.rds", compress = "gz")
+write_rds(dp_simils, paste0(data_path, "glove_models/SemSimilWeights-DigitalitySimple.rds", compress = "gz"))
 
 
 # Visualize 
 pl <-
-  ggplot(dp_simils %>% ungroup() %>% arrange(desc(sim.target)) %>% head(200), 
+  ggplot(dp_simils %>% ungroup() %>% arrange(desc(sim.target)) %>% head(250), 
        aes(label = token, size = sim.target, color = seed)) +
   geom_text_wordcloud() +
   scale_radius(range = c(1.5, 6), limits = c(0, NA)) +
   scale_colour_manual(values = c("blue", "red"))+
   labs(title = "Semantic similarity to vector of \'digital\' seed terms",
-       subtitle = "Based on Glove.6B.300d model; Top-200 words most similar to average word vector of the seed terms\nWords in red are seed terms, words in blue are \'learned\' from the pre-trained word vector model.")+
+       subtitle = "Based on Glove.6B.300d model; Top-250 words most similar to average word vector of the seed terms\nWords in red are seed terms, words in blue are \'learned\' from the pre-trained word vector model.")+
   theme_minimal()+
   theme(plot.background = element_rect(color = "white"))
-ggsave("./output/plots/SemanticallySimilarTerms_Digital_Simple.png", pl, width = 24, height = 12, units = "cm")
+ggsave("./output/glove_plots/SemanticallySimilarTerms_Digital_Simple.png", pl, width = 24, height = 12, units = "cm")
 
 
 
@@ -128,21 +156,7 @@ ggsave("./output/plots/SemanticallySimilarTerms_Digital_Simple.png", pl, width =
 # Five human coders received a list of the top-1500 terms semantically close to the radically simplified dictionary
 # Each coder rated each terms as "Clearly and exclusively referring to the digital technology?" [0|1]
 
-files <- paste0("./data/DigitalTerms/", list.files("./data/DigitalTerms/"))
-
-ratings <- read_xlsx(files[1], sheet = 2) %>% rename(token = 1, coder1 = 2) %>% 
-  left_join(read_xlsx(files[2], sheet = 2) %>% rename(token = 1, coder2 = 2), by = "token") %>% 
-  left_join(read_xlsx(files[3], sheet = 2) %>% rename(token = 1, coder3 = 2), by = "token") %>% 
-  left_join(read_xlsx(files[4], sheet = 2) %>% rename(token = 1, coder4 = 2), by = "token") %>%
-  left_join(read_xlsx(files[5], sheet = 2) %>% rename(token = 1, coder5 = 2), by = "token") %>% 
-  mutate(codesum = rowSums(across(where(is.numeric)))) %>% 
-  arrange(desc(codesum))
-
-# Now we take those tokens for which a majority of coders (3/5) suggested that this was a relevant term ...
-dp_vocab2 <- ratings %>% 
-  filter(codesum >=3) %>% 
-  select(token) %>% 
-  pull()
+dp_vocab2 = read_rds("../TRIAS-paper1/large_data/SemSimilWeights-DigitalityAdvancedFreqCorrection.rds") %>% filter(seed == T) %>% pull(token)
 
 # ... and get back their average vector in the word embedding model  
 dp_vector2 <- glove.300 %>% 
@@ -165,105 +179,20 @@ dp_simils2 <-
 
 # Export token weights
 # Export semantic similarity dictionary ####
-write_rds(dp_simils2, "./large_data/SemSimilWeights-DigitalityAdvanced.rds", compress = "gz")
+write_rds(dp_simils2, paste0(data_path, "glove_models/SemSimilWeights-DigitalityAdvanced.rds", compress = "gz"))
 
 # Visualize 
 pl <-
-  ggplot(dp_simils2 %>% ungroup() %>% arrange(desc(sim.target)) %>% head(200), 
+  ggplot(dp_simils2 %>% ungroup() %>% arrange(desc(sim.target)) %>% head(250), 
          aes(label = token, size = sim.target, color = seed)) +
   geom_text_wordcloud() +
   scale_radius(range = c(1.5, 6), limits = c(0, NA)) +
   scale_colour_manual(values = c("blue", "red"))+
   labs(title = "Semantic similarity to vector of \'digital\' seed terms",
-       subtitle = "Based on Glove.6B.300d model; Top-200 words most similar to average word vector of the seed terms (based on human coders)\nWords in red are seed terms, words in blue are \'learned\' from the pre-trained word vector model.")+
+       subtitle = "Based on Glove.6B.300d model; Top-250 words most similar to average word vector of the seed terms (based on human coders)\nWords in red are seed terms, words in blue are \'learned\' from the pre-trained word vector model.")+
   theme_minimal()+
   theme(plot.background = element_rect(color = "white"))
-ggsave("./output/plots/SemanticallySimilarTerms_Digital_Advanced.png", pl, width = 24, height = 12, units = "cm")
-
-
-
-# Semantic similarity to DIGITAL terms - intersubjective dictionary - frequency correction ####
-
-# Idea: Frequency in overall language could give us an idea of how 'specific' a word is ...
-# Those that are similar to 'digitality' but occur very frequently in general English should be less informative ...
-
-# I get frequencies from the sophistication package
-# https://github.com/kbenoit/sophistication/blob/master/data/data_matrix_google1grams.RData
-
-# Unfortunately this is much smaller than the GLOVE vocab ...
-# Raw data available here: 
-# http://commondatastorage.googleapis.com/books/syntactic-ngrams/index.html
-# http://storage.googleapis.com/books/ngrams/books/datasetsv2.html
-
-load("./large_data/data_matrix_google1grams.RData")
-ngram <- data_matrix_google1grams
-rm(data_matrix_google1grams)
-gc()
-
-# Average from the 1980-2010 decades
-ngram <- ngram %>% 
-  as.data.frame() %>% 
-  select(c(`1980`, `1990`, `2000`)) %>% 
-  mutate(abs.freq = `1980`+ `1990`+ `2000`) %>% 
-  mutate(ngram.perc = round(abs.freq / sum(abs.freq), 5)*100) %>% 
-  rownames_to_column(var = "token")
-
-# Add to simil data (advanced dict)
-# And combine 
-dp_simils3 <- dp_simils2 %>% 
-  left_join(ngram %>% select(c(token, ngram.perc)),
-            by = "token")  %>% 
-  filter(!is.na(ngram.perc)) %>% 
-  # mutate(sim.norm = scale(sim.target)[ ,1],
-  #                   perc.norm = scale(ngram.perc)[ ,1],
-  #                   weight = sim.norm - perc.norm) %>% 
-  # mutate(sim.norm = (sim.target - min(sim.target, na.rm = T))/(max(sim.target, na.rm = T) - min(sim.target, na.rm = T)),
-  #        perc.norm = (ngram.perc - min(ngram.perc, na.rm = T))/(max(ngram.perc, na.rm = T) - min(ngram.perc, na.rm = T)),
-  #        weight = sim.norm - perc.norm) %>% 
-  mutate(sim.norm = (sim.target - min(sim.target, na.rm = T))/(max(sim.target, na.rm = T) - min(sim.target, na.rm = T)),
-         perc.norm = (ngram.perc - min(ngram.perc, na.rm = T))/(max(ngram.perc, na.rm = T) - min(ngram.perc, na.rm = T)),
-         inv.perc.norm = 1-perc.norm,
-         weight = sim.norm*inv.perc.norm) %>%
-  arrange(desc(weight)) %>% 
-  mutate(rank.weight = row_number(),
-         rank.diff = rank.simil-rank.weight) 
-
-# Quick comparison - downwards correction (partially drastic) well visible
-ggplot(dp_simils3, aes(x = sim.target, y = weight)) + 
-  geom_point()
-
-# Pretty strong kurtosis, but stronger right tail - maybe good for discrimination
-ggplot(dp_simils3, aes(x = weight)) +
-  geom_density()
-
-# Look at the extreme examples: mainly generic words (almost stopwords) that we push downwards here - good!
-dp_simils3 %>% 
-  arrange(desc(rank.diff)) %>% 
-  select(token) %>% 
-  tail(25)
-
-# Clean up and export
-dp_simils3 <- dp_simils3 %>% 
-  select(rank.weight, token, weight, seed) %>% 
-  rename(sim.target = weight)
-
-write_rds(dp_simils3, "./large_data/SemSimilWeights-DigitalityAdvancedFreqCorrection.rds", compress = "gz")
-
-# Visualize 
-pl <-
-  ggplot(dp_simils3 %>% ungroup() %>% arrange(desc(sim.target)) %>% head(200), 
-         aes(label = token, size = sim.target, color = seed)) +
-  geom_text_wordcloud() +
-  scale_radius(range = c(1.5, 6), limits = c(0, NA)) + #ADAPT for this one!
-  scale_colour_manual(values = c("blue", "red"))+
-  labs(title = "Semantic similarity to vector of \'digital\' seed terms",
-       subtitle = "Based on Glove.6B.300d model; Top-200 words most similar to average word vector of the seed terms (based on human coders)\nWords in red are seed terms, words in blue are \'learned\' from the pre-trained word vector model.")+
-  theme_minimal()+
-  theme(plot.background = element_rect(color = "white"))
-ggsave("./output/plots/SemanticallySimilarTerms_Digital_Advanced_FreqCorrection.png", pl, width = 24, height = 12, units = "cm")
-
-
-
+ggsave("./output/glove_plots/SemanticallySimilarTerms_Digital_Advanced.png", pl, width = 24, height = 12, units = "cm")
 
 
 
@@ -293,21 +222,21 @@ econ_simils <-
 
 # Export token weights
 # Export semantic similarity dictionary ####
-write_rds(econ_simils, "./large_data/SemSimilWeights-Economy.rds", compress = "gz")
+write_rds(econ_simils, paste0(data_path, "glove_models/SemSimilWeights-Economy.rds", compress = "gz"))
 
 
 # Visualize 
 pl <-
-  ggplot(econ_simils %>% ungroup() %>% arrange(desc(sim.target)) %>% head(200), 
+  ggplot(econ_simils %>% ungroup() %>% arrange(desc(sim.target)) %>% head(250), 
          aes(label = token, size = sim.target, color = seed)) +
   geom_text_wordcloud() +
   scale_radius(range = c(1.5, 6), limits = c(0, NA)) +
   scale_colour_manual(values = c("blue", "red"))+
   labs(title = "Semantic similarity to vector of \'economy\' seed terms",
-       subtitle = "Based on Glove.6B.300d model; Top-200 words most similar to average word vector of the seed terms\nWords in red are seed terms, words in blue are \'learned\' from the pre-trained word vector model.")+
+       subtitle = "Based on Glove.6B.300d model; Top-250 words most similar to average word vector of the seed terms\nWords in red are seed terms, words in blue are \'learned\' from the pre-trained word vector model.")+
   theme_minimal()+
   theme(plot.background = element_rect(color = "white"))
-ggsave("./output/plots/SemanticallySimilarTerms_Economy.png", pl, width = 24, height = 12, units = "cm")
+ggsave("./output/glove_plots/SemanticallySimilarTerms_Economy.png", pl, width = 24, height = 12, units = "cm")
 
 
 
@@ -338,21 +267,21 @@ sec_simils <-
 
 # Export token weights
 # Export semantic similarity dictionary ####
-write_rds(sec_simils, "./large_data/SemSimilWeights-Security.rds", compress = "gz")
+write_rds(sec_simils, paste0(data_path, "glove_models/SemSimilWeights-Security.rds", compress = "gz"))
 
 
 # Visualize 
 pl <-
-  ggplot(sec_simils %>% ungroup() %>% arrange(desc(sim.target)) %>% head(200), 
+  ggplot(sec_simils %>% ungroup() %>% arrange(desc(sim.target)) %>% head(250), 
          aes(label = token, size = sim.target, color = seed)) +
   geom_text_wordcloud() +
   scale_radius(range = c(1.5, 6), limits = c(0, NA)) +
   scale_colour_manual(values = c("blue", "red"))+
   labs(title = "Semantic similarity to vector of \'security\' seed terms",
-       subtitle = "Based on Glove.6B.300d model; Top-200 words most similar to average word vector of the seed terms\nWords in red are seed terms, words in blue are \'learned\' from the pre-trained word vector model.")+
+       subtitle = "Based on Glove.6B.300d model; Top-250 words most similar to average word vector of the seed terms\nWords in red are seed terms, words in blue are \'learned\' from the pre-trained word vector model.")+
   theme_minimal()+
   theme(plot.background = element_rect(color = "white"))
-ggsave("./output/plots/SemanticallySimilarTerms_Security.png", pl, width = 24, height = 12, units = "cm")
+ggsave("./output/glove_plots/SemanticallySimilarTerms_Security.png", pl, width = 24, height = 12, units = "cm")
 
 
 
@@ -382,21 +311,21 @@ lib_simils <-
 
 
 # Export token weights
-write_rds(lib_simils, "./large_data/SemSimilWeights-LibRights.rds", compress = "gz")
+write_rds(lib_simils, paste0(data_path, "glove_models/SemSimilWeights-LibRights.rds", compress = "gz"))
 
 
 # Visualize 
 pl <-
-  ggplot(lib_simils %>% ungroup() %>% arrange(desc(sim.target)) %>% head(200), 
+  ggplot(lib_simils %>% ungroup() %>% arrange(desc(sim.target)) %>% head(250), 
          aes(label = token, size = sim.target, color = seed)) +
   geom_text_wordcloud() +
   scale_radius(range = c(1.5, 6), limits = c(0, NA)) +
   scale_colour_manual(values = c("blue", "red"))+
   labs(title = "Semantic similarity to vector of \'liberal rights\' seed terms",
-       subtitle = "Based on Glove.6B.300d model; Top-200 words most similar to average word vector of the seed terms\nWords in red are seed terms, words in blue are \'learned\' from the pre-trained word vector model.")+
+       subtitle = "Based on Glove.6B.300d model; Top-250 words most similar to average word vector of the seed terms\nWords in red are seed terms, words in blue are \'learned\' from the pre-trained word vector model.")+
   theme_minimal()+
   theme(plot.background = element_rect(color = "white"))
-ggsave("./output/plots/SemanticallySimilarTerms_Librights.png", pl, width = 24, height = 12, units = "cm")
+ggsave("./output/glove_plots/SemanticallySimilarTerms_Librights.png", pl, width = 24, height = 12, units = "cm")
 
 
 
@@ -444,48 +373,47 @@ sc <- coop_simils %>%
   left_join(conf_simils %>% 
               select(token, conf),
             by = "token") %>% 
-  mutate(conf_coop = coop-conf) %>% 
-  arrange(desc(conf_coop))
+  mutate(coop_confl = coop-conf) %>% 
+  arrange(desc(coop_confl))
 
 # Export token weights
 write_rds(sc ,#%>% select(token, conf_coop), 
-          "./large_data/SemSimilWeights-ConflictCooperation.rds", compress = "gz")
+          paste0(data_path, "glove_models/SemSimilWeights-CooperationConflict.rds", compress = "gz"))
 
 
 # Visualize (ind scales)
 
 pl <-
-  ggplot(coop_simils %>% ungroup() %>% arrange(desc(coop)) %>% head(200), 
+  ggplot(coop_simils %>% ungroup() %>% arrange(desc(coop)) %>% head(250), 
          aes(label = token, size = coop, color = seed)) +
   geom_text_wordcloud() +
   scale_radius(range = c(1.5, 6), limits = c(0, NA)) +
   scale_colour_manual(values = c("blue", "red"))+
   labs(title = "Semantic similarity to vector of \'cooperation\' seed terms",
-       subtitle = "Based on Glove.6B.300d model; Top-200 words most similar to average word vector of the seed terms\nWords in red are seed terms, words in blue are \'learned\' from the pre-trained word vector model.")+
+       subtitle = "Based on Glove.6B.300d model; Top-250 words most similar to average word vector of the seed terms\nWords in red are seed terms, words in blue are \'learned\' from the pre-trained word vector model.")+
   theme_minimal()+
   theme(plot.background = element_rect(color = "white"))
-ggsave("./output/plots/SemanticallySimilarTerms_Cooperation.png", pl, width = 24, height = 12, units = "cm")
+ggsave("./output/glove_plots/SemanticallySimilarTerms_Cooperation.png", pl, width = 24, height = 12, units = "cm")
 
 pl <-
-  ggplot(conf_simils %>% ungroup() %>% arrange(desc(conf)) %>% head(200), 
+  ggplot(conf_simils %>% ungroup() %>% arrange(desc(conf)) %>% head(250), 
          aes(label = token, size = conf, color = seed)) +
   geom_text_wordcloud() +
   scale_radius(range = c(1.5, 6), limits = c(0, NA)) +
   scale_colour_manual(values = c("blue", "red"))+
   labs(title = "Semantic similarity to vector of \'conflict\' seed terms",
-       subtitle = "Based on Glove.6B.300d model; Top-200 words most similar to average word vector of the seed terms\nWords in red are seed terms, words in blue are \'learned\' from the pre-trained word vector model.")+
+       subtitle = "Based on Glove.6B.300d model; Top-250 words most similar to average word vector of the seed terms\nWords in red are seed terms, words in blue are \'learned\' from the pre-trained word vector model.")+
   theme_minimal()+
   theme(plot.background = element_rect(color = "white"))
-ggsave("./output/plots/SemanticallySimilarTerms_Conflict.png", pl, width = 24, height = 12, units = "cm")
+ggsave("./output/glove_plots/SemanticallySimilarTerms_Conflict.png", pl, width = 24, height = 12, units = "cm")
 
 
 # Visualize scaling weights
 
-set.seed(20240511)
 
 # Stratified sample
 df <- sc %>% 
-  mutate(group = cut(conf_coop, 7)) %>% # Cut range of scale into n intervals
+  mutate(group = cut(coop_confl, 7)) %>% # Cut range of scale into n intervals
   group_by(group) %>% 
   sample_n(size = 28) %>% # n words from each interval
   ungroup()
@@ -513,9 +441,9 @@ df <- df %>% filter(!(token %in% df.highlight$token)) # Avoid duplicates
 pl<- 
   ggplot()+
   #geom_text(data = df[sample(nrow(df), 2500, replace = F), ], alpha= .3, color = "grey60", aes(y=sample.int(100, size = 2500, replace =T), x = conf_coop, label = token)) +
-  geom_text(data = df, alpha= .4, color = "grey60", aes(y=sample.int(100, size = nrow(df), replace =T), x = conf_coop, label = token)) +
+  geom_text(data = df, alpha= .4, color = "grey60", aes(y=sample.int(100, size = nrow(df), replace =T), x = coop_confl, label = token)) +
   geom_vline(xintercept = 0, linetype = "dashed")+
-  geom_text(data = df.highlight, aes(y=sample.int(100, size = nrow(df.highlight), replace =T), x = conf_coop, label = token, color = group), fontface = "bold")+
+  geom_text(data = df.highlight, aes(y=sample.int(100, size = nrow(df.highlight), replace =T), x = coop_confl, label = token, color = group), fontface = "bold")+
   scale_color_manual(values = c("#0380b5", "#9e3173"), name = "")+
   labs(title = "Scaling conflictual vs cooperative language",
        subtitle = paste0("Based on Glove.6B.300d word vector model and a stratified random sample of ", nrow(df), " words from its vocabulary"),
@@ -532,5 +460,141 @@ pl<-
         axis.ticks.y = element_blank(),
         axis.text.y = element_blank())
 
-ggsave("./output/plots/ConflictCoopScalingWeigths.png", pl, width = 28, height = 14, units = "cm")
+ggsave("./output/glove_plots/CoopConflictScalingWeigths.png", pl, width = 28, height = 14, units = "cm")
+
+
+
+# Semantic scaling COOPERATION/CONFLICT ####
+
+# Seed tokens
+friend_vocab = c("friend", "partner", "ally", "peace", "peaceful",  "friendly", "cooperative")
+foe_vocab = c("foe", "opponent", "enemy", "war", "aggressive", "hostile", "uncooperative")
+
+# The average vectors of these seeds in the pre.trained word embeddings
+friend_vector <- glove.300 %>% 
+  select(all_of(friend_vocab)) %>% # Probably needs a check whether all seeds exist in word vector
+  rowMeans() # Aggregation by mean
+foe_vector <- glove.300 %>% 
+  select(all_of(foe_vocab)) %>% # Probably needs a check whether all seeds exist in word vector
+  rowMeans() # Aggregation by mean
+
+# Extract cosine similarities to this average vector
+# (word weights that would semantically pull a text towards the seed)
+friend_simils <-
+  find_sim_wvs(friend_vector, glove.300, top_n_res = 400000) %>% 
+  as.data.frame() %>% 
+  rename(friend = 1) %>% 
+  rownames_to_column("token") %>% 
+  mutate(seed = token %in% friend_vocab) %>% 
+  filter(!(token %in% quanteda::stopwords("english"))) %>% 
+  arrange(desc(friend)) %>% 
+  mutate(rank.simil=row_number()) %>% 
+  relocate(rank.simil) # rank by similarity to seed vector
+
+foe_simils <-
+  find_sim_wvs(foe_vector, glove.300, top_n_res = 400000) %>% 
+  as.data.frame() %>% 
+  rename(foe = 1) %>% 
+  rownames_to_column("token") %>% 
+  mutate(seed = token %in% foe_vocab) %>% 
+  filter(!(token %in% quanteda::stopwords("english"))) %>% 
+  arrange(desc(foe)) %>% 
+  mutate(rank.simil=row_number()) %>% 
+  relocate(rank.simil) # rank by similarity to seed vector
+
+
+# Scale
+sc <- friend_simils %>% 
+  select(token, friend) %>% 
+  left_join(foe_simils %>% 
+              select(token, foe),
+            by = "token") %>% 
+  mutate(friend_foe = friend-foe) %>% 
+  arrange(desc(friend_foe))
+
+# Export token weights
+write_rds(sc, paste0(data_path, "glove_models/SemSimilWeights-FriendFoe.rds", compress = "gz"))
+
+
+# Visualize (ind scales)
+
+pl <-
+  ggplot(friend_simils %>% ungroup() %>% arrange(desc(friend)) %>% head(250), 
+         aes(label = token, size = friend, color = seed)) +
+  geom_text_wordcloud() +
+  scale_radius(range = c(1.5, 6), limits = c(0, NA)) +
+  scale_colour_manual(values = c("blue", "red"))+
+  labs(title = "Semantic similarity to vector of \'friend\' seed terms",
+       subtitle = "Based on Glove.6B.300d model; Top-250 words most similar to average word vector of the seed terms\nWords in red are seed terms, words in blue are \'learned\' from the pre-trained word vector model.")+
+  theme_minimal()+
+  theme(plot.background = element_rect(color = "white"))
+ggsave("./output/glove_plots/SemanticallySimilarTerms_Friend.png", pl, width = 24, height = 12, units = "cm")
+
+pl <-
+  ggplot(foe_simils %>% ungroup() %>% arrange(desc(foe)) %>% head(250), 
+         aes(label = token, size = foe, color = seed)) +
+  geom_text_wordcloud() +
+  scale_radius(range = c(1.5, 6), limits = c(0, NA)) +
+  scale_colour_manual(values = c("blue", "red"))+
+  labs(title = "Semantic similarity to vector of \'foe\' seed terms",
+       subtitle = "Based on Glove.6B.300d model; Top-250 words most similar to average word vector of the seed terms\nWords in red are seed terms, words in blue are \'learned\' from the pre-trained word vector model.")+
+  theme_minimal()+
+  theme(plot.background = element_rect(color = "white"))
+ggsave("./output/glove_plots/SemanticallySimilarTerms_Foe.png", pl, width = 24, height = 12, units = "cm")
+
+
+# Visualize scaling weights
+
+
+# Stratified sample
+df <- sc %>% 
+  mutate(group = cut(friend_foe, 7)) %>% # Cut range of scale into n intervals
+  group_by(group) %>% 
+  sample_n(size = 28) %>% # n words from each interval
+  ungroup()
+
+
+
+# Selected terms for highlighting
+
+df.anchors <- sc %>% 
+  filter(token %in% c(friend_vocab, foe_vocab)) %>% 
+  mutate(group = "Anchor terms defined by researcher")
+
+df.learned <- sc %>% 
+  # ADAPT?!?
+  filter(token %in% c("aggression", "mistrust", "anger", "tensions", "frustration", "escalation", "backlash", "insistence",
+                      "understanding", "partnership", "solidarity", "negotiate", "compromise", "peaceful", "fiendship", "coalition",
+                      "coexistence", "unaccaeptable", "stable", "stop", "normal", "responsible")) %>% 
+  mutate(group = "Example terms scaled by the algorithm")
+
+df.highlight <- rbind(df.anchors, df.learned)
+df.highlight$group <- fct_rev(factor(df.highlight$group, levels = c("Anchor terms defined by researcher", "Example terms scaled by the algorithm")))
+
+df <- df %>% filter(!(token %in% df.highlight$token)) # Avoid duplicates
+
+
+pl<- 
+  ggplot()+
+  #geom_text(data = df[sample(nrow(df), 2500, replace = F), ], alpha= .3, color = "grey60", aes(y=sample.int(100, size = 2500, replace =T), x = friend_foe, label = token)) +
+  geom_text(data = df, alpha= .4, color = "grey60", aes(y=sample.int(100, size = nrow(df), replace =T), x = friend_foe, label = token)) +
+  geom_vline(xintercept = 0, linetype = "dashed")+
+  geom_text(data = df.highlight, aes(y=sample.int(100, size = nrow(df.highlight), replace =T), x = friend_foe, label = token, color = group), fontface = "bold")+
+  scale_color_manual(values = c("#0380b5", "#9e3173"), name = "")+
+  labs(title = "Scaling friend vs foe",
+       subtitle = paste0("Based on Glove.6B.300d word vector model and a stratified random sample of ", nrow(df), " words from its vocabulary"),
+       y = "",
+       x = "Extracted word weights\nbetween friend and foe")+
+  theme_bw()+
+  theme(legend.position = "bottom",
+        axis.text = element_text(color = "black"),
+        # text = element_text(family = "Dahrendorf"),
+        plot.title = element_text(face = "bold", size = 14),
+        plot.subtitle = element_text(),
+        panel.grid = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank())
+
+ggsave("./output/glove_plots/FriendFoeScalingWeigths.png", pl, width = 28, height = 14, units = "cm")
 
