@@ -550,7 +550,7 @@ ggsave("./output/glove_plots/SemanticallySimilarTerms_Foe.png", pl, width = 24, 
 df <- sc %>% 
   mutate(group = cut(friend_foe, 7)) %>% # Cut range of scale into n intervals
   group_by(group) %>% 
-  sample_n(size = 28) %>% # n words from each interval
+  sample_n(size = 15) %>% # n words from each interval
   ungroup()
 
 

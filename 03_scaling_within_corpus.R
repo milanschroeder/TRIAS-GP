@@ -5,8 +5,86 @@ library(tidyverse)
 library(quanteda)
 library(countrycode)
 library(LSX)
-#library(extrafont)
+library(extrafont)
 
+# key geographical entities to remove before scaling:
+geo_entities <- c(c(newsmap::data_dictionary_newsmap_en %>% unlist(),
+                  newsmap::data_dictionary_newsmap_ar %>% unlist(),
+                  newsmap::data_dictionary_newsmap_de %>% unlist(),
+                  newsmap::data_dictionary_newsmap_es %>% unlist(),
+                  newsmap::data_dictionary_newsmap_fr %>% unlist(),
+                  newsmap::data_dictionary_newsmap_he %>% unlist(),
+                  newsmap::data_dictionary_newsmap_it %>% unlist(),
+                  newsmap::data_dictionary_newsmap_ja %>% unlist(),
+                  newsmap::data_dictionary_newsmap_pt %>% unlist(),
+                  newsmap::data_dictionary_newsmap_pt %>% unlist(),
+                  newsmap::data_dictionary_newsmap_ru %>% unlist(),
+                  newsmap::data_dictionary_newsmap_zh_cn %>% unlist(),
+                  newsmap::data_dictionary_newsmap_zh_tw %>% unlist()
+                  ) %>% tibble(entities = .) %>% 
+  mutate(entities = ifelse(str_length(entities %>% str_remove("\\*")) < 6 | str_detect(entities, "\\*"), 
+                           paste0("\\b", entities %>% str_remove("\\*"), "\\b"),
+                           entities %>% str_remove("\\*"))) %>% 
+  filter(str_detect(entities, "\\bus\\b", negate = T)) %>%  # remove us bc false positives
+  pull(entities) %>% unique(),
+  "afri", "\\beurop", "americ", "oceania", "asian", "\\busa\\b")
+  
+# Illustrate text model ####
+
+plot_tmod <- function(tmod = tmod_lss, seedterms, concept){
+  
+  set.seed(1905)
+  
+  df <- data.frame(words = names(tmod$beta),
+                   polarity = tmod$beta,
+                   freq = tmod$frequency)
+  
+  df.anchors <- df %>% 
+    filter(words %in% seedterms) %>% 
+    mutate(group = "Seedteerms set manually by researcher")
+  
+  df.learned <- 
+      df %>% 
+      #ToDo: maybe add frequency weight... 
+      filter(words %in% names(head(coef(tmod), 100) %>% sample(size = 10))) %>% 
+      mutate(group = "Examples for algorithmically identified terms")
+  
+  # add negative examples for bipolar scales:
+  if (str_detect(concept, "_")) {
+    df.learned <- 
+      rbind(
+        df.learned,
+        df %>% 
+            filter(words %in% names(tail(coef(tmod), 100) %>% sample(size = 10))) %>% 
+            mutate(group = "Examples for algorithmically identified terms")
+      )
+  }
+    
+  df.highlight <- rbind(df.anchors, df.learned)
+  df$highlight$group <- fct_rev(factor(df.highlight$group, levels = c("Seedteerms set manually by researcher", "Examples for algorithmically identified terms")))
+  
+  # Plot textmodel illustration
+  
+  ggplot()+
+    geom_text(data = df[sample(nrow(df), 5000, replace = F), ], alpha= .4, color = "grey60", aes(y=log(freq), x = polarity, label = words)) +
+    geom_vline(xintercept = 0, linetype = "dashed")+
+    geom_text(data = df.highlight, aes(y=log(freq), x = polarity, label = words, color = group), fontface = "bold")+
+    scale_color_manual(values = c("#0380b5", "#9e3173"), name = "")+
+    labs(title = "Illustration of Scaling Model",
+         subtitle = "Based on Latent Semantic Scaling Algorithm (Watanabe 2021),\nall Documents in EU Press Archive \nrandom sample of 5,000 words",
+         y = "Word Frequency\nover all EU Documents (log)",
+         x = paste("Word Polarity\non", concept, "scale"))+
+    theme_bw()+
+    theme(legend.position = "bottom",
+          axis.text = element_text(color = "black"),
+          text = element_text(family = "Dahrendorf"),
+          plot.title = element_text(face = "bold", size = 14),
+          plot.subtitle = element_text(),
+          panel.grid = element_blank(),
+          axis.text.x = element_text(size = 10))
+  
+  ggsave(paste0("./Output/LSX_plots/IllustrateScalingModel_", concept, ".png"), width = 26, height = 16, units = "cm")
+}
 
 # Corpus ####
 data_path <- "~/Nextcloud/Shared/TRIAS Brückenprojekt/Daten/cleaned_data/"
@@ -15,7 +93,6 @@ data_path <- "~/Nextcloud/Shared/TRIAS Brückenprojekt/Daten/cleaned_data/"
 # paras <- read_rds(paste0(data_path, "data_paralevel.rds"))
 sents <- read_rds(paste0(data_path, "data_sentlevel.rds")) %>% 
   select(sentence_id, doc_id, text = text_sent)
-
 
 # Quanteda objects  ###
 
@@ -26,9 +103,9 @@ EC_corpus <- corpus(sents$text, docvars = sents[ ,c("sentence_id", "doc_id")])
 #corp_sent <- corpus_reshape(ungd_corpus, to =  "sentences")
 toks_sent <- EC_corpus %>% 
   tokens(remove_punct = TRUE, remove_symbols = TRUE, 
-         remove_numbers = TRUE, remove_url = TRUE) %>% 
+         remove_numbers = TRUE, remove_url = TRUE, split_tags = T) %>% 
   tokens_remove(stopwords("en")) %>% 
-  tokens_remove(countrycode::codelist$country.name.en) # Remove english country names - they should not affect the scale
+  tokens_remove(pattern = geo_entities %>% paste(collapse = "|"), valuetype = "regex") # Remove country/continent names - they should not affect the scale
 
 # Doc frequency matrix (sentences)
 dfmat_sent <- toks_sent %>% 
@@ -58,9 +135,9 @@ Economy = list(Economy = c("economy", "economic", "markets", "trade", "business"
 Security = list(Security = c("security", "defense", "military", "espionage", "intelligence")) %>% dictionary() %>% as.seedwords(),
 LibRights = list(LibRights = c("rights", "liberty", "freedom", "justice", "equality")) %>% dictionary() %>% as.seedwords(),
 
-coop_vocab = list(coop = c("cooperation", "agreement",    "support",    "collaboration", "unity")) %>% dictionary() %>% as.seedwords(),
-conf_vocab = list(confl = c("conflict",    "disagreement", "opposition", "confrontation", "hostility")) %>% dictionary() %>% as.seedwords(),
-confl_coop = list(
+coop = list(coop = c("cooperation", "agreement",    "support",    "collaboration", "unity")) %>% dictionary() %>% as.seedwords(),
+conf = list(confl = c("conflict",    "disagreement", "opposition", "confrontation", "hostility")) %>% dictionary() %>% as.seedwords(),
+coop_conflict = list(
   positive = c("cooperation", "agreement",    "support",    "collaboration", "unity"),
   negative = c("conflict",    "disagreement", "opposition", "confrontation", "hostility")
 ) %>% dictionary() %>% as.seedwords()
@@ -75,9 +152,11 @@ for (i in 1:length(vocabs)) {
   write_rds(tmod_lss, paste0(data_path, "../LSX_models/lss_model_", names(vocabs[i]), ".rds"))
   
   cat("Scaled", names(vocabs[i]), ". Significant words:\npositive:")
-  head(coef(tmod_lss),20)
+  print(head(coef(tmod_lss),20))
   cat("negative:\n")
-  tail(coef(tmod_lss),20)
+  print(tail(coef(tmod_lss),20))
+  
+  plot_tmod(tmod = tmod_lss, seedterms = names(vocabs[[i]]), concept = names(vocabs[i]))
   
   rm(tmod_lss)
   gc()
@@ -87,48 +166,7 @@ for (i in 1:length(vocabs)) {
 # textplot_terms(tmod_lss, unlist(conflict_terms), max_words = 5000)
 
 # Maybe construct a nicer plot, highlighting random 'learned' words in different color
-# Export mdoel to that end
+# Export model to that end
 
 
-# Illustrate text model ####
 
-
-df <- data.frame(words = names(mod$beta),
-                 polarity = mod$beta,
-                 freq = mod$frequency)
-
-df.anchors <- df %>% 
-  filter(words %in% c("friend", "partner", "ally", "peace", "peaceful",  "friendly", "cooperative",
-                      "foe", "opponent", "enemy", "war", "aggressive", "hostile", "uncooperative")) %>% 
-  mutate(group = "Beispiele für vom Forscher gesetzte Ankerbegriffe")
-
-df.learned <- df %>% 
-  filter(words %in% c("coexistence", "harmonious", "respectful", "partnership", "ties", "win-win", "state-to-state", "legitimate", "stable",
-                      "security", "community", "global", "international", "national", "unemployed", "geopolitics", "misperceptions", "issue", "conducive", 
-                      "militaristic", "provocative", "propaganda", "irresponsible", "warmongering", "unacceptable", "military", "tension", "regret", "stop")) %>% 
-  mutate(group = "Beispiele für vom Algorithmus automatisch skalierte Begriffe")
-
-df.highlight <- rbind(df.anchors, df.learned)
-df$highlight$group <- fct_rev(factor(df.highlight$group, levels = c("Beispiele für vom Forscher gesetzte Ankerbegriffe", "Beispiele für vom Algorithmus automatisch skalierte Begriffe")))
-
-# Plot textmodel illustration
-set.seed(2147483647)
-ggplot()+
-  geom_text(data = df[sample(nrow(df), 6000, replace = F), ], alpha= .4, color = "grey60", aes(y=log(freq), x = polarity, label = words)) +
-  geom_vline(xintercept = 0, linetype = "dashed")+
-  geom_text(data = df.highlight, aes(y=log(freq), x = polarity, label = words, color = group), fontface = "bold")+
-  scale_color_manual(values = c("#0380b5", "#9e3173"), name = "")+
-  labs(title = "Illustration des Skalierungsmodells",
-       subtitle = "Basierend auf dem Latent Semantic Scaling Algorithmus (Watanabe 2021),\nallen Reden in der UN-Vollversammlung 1970-2020 (Baturo, Mikhaylov, und Dasandi, 2017)\nund einer Zufallsstichprobe von 6.000 Worten",
-       y = "Häufigkeit der Worte\nüber alle UN-Reden (logarithmiert)",
-       x = "Polarität des Wortes\nauf der Skala zwischen konfliktbetonter und kooperativer Sprache")+
-  theme_bw()+
-  theme(legend.position = "bottom",
-        axis.text = element_text(color = "black"),
-        text = element_text(family = "Dahrendorf"),
-        plot.title = element_text(face = "bold", size = 14),
-        plot.subtitle = element_text(),
-        panel.grid = element_blank(),
-        axis.text.x = element_text(size = 10))
-
-#ggsave("./Plots/IllustrateScalingModel.png", width = 26, height = 16, units = "cm")
