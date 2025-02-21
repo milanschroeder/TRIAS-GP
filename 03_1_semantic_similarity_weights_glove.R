@@ -2,7 +2,7 @@
 # Project:  TRIAS - Geopolitics
 # Tasks:    Extract semantic similarity token weigths from GloVe vectors
 #           for scaling Commission Communication later on
-# Author:   @ChRauh (20.02.2025)
+# Author:   @ChRauh (21.02.2025)
 #########################################################################
 
 # Inputs: tokens.rds; glove.6B.300d.rds
@@ -16,6 +16,7 @@ library(newsmap) # Semi-Supervised Model for Geographical Document Classificatio
 library(ggwordcloud) # A Word Cloud Geom for 'ggplot2' CRAN v0.6.1 
 library(quanteda) # Quantitative Analysis of Textual Data CRAN v4.0.2
 library(GGally) # Extension to 'ggplot2' CRAN v2.2.1
+library(patchwork)
 
 # fix randomness
 set.seed(1905)
@@ -24,7 +25,8 @@ set.seed(1905)
 # Needed as big files currently not part of the repo
 
 # data_path <- "~/Nextcloud/Shared/TRIAS Brückenprojekt/Daten/" # MS/WZB
-data_path <- "C:/Users/rauh/NextCloudSync/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/WZB
+# data_path <- "C:/Users/rauh/NextCloudSync/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/WZB
+data_path <- "D:/WZB-Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/HP
 
 
 # Key geographical entities to remove before scaling ####
@@ -84,7 +86,7 @@ rm(vocab)
 gc()
 
 # Store (to save time in future iterations)
-write_rds(glove, paste0(data_path, "external_data/glove.6B.300d_GPfilter.rds"))
+# write_rds(glove, paste0(data_path, "external_data/glove.6B.300d_GPfilter.rds"))
 glove <- read_rds(paste0(data_path, "external_data/glove.6B.300d_GPfilter.rds"))
 
 
@@ -139,7 +141,7 @@ econ_simils <-
 
 # Export token weights
 # Export semantic similarity dictionary ####
-write_rds(econ_simils, paste0(data_path, "glove_models/SemSimilWeights-Economy.rds", compress = "gz"))
+# write_rds(econ_simils, paste0(data_path, "glove_models/SemSimilWeights-Economy.rds", compress = "gz"))
 
 
 # Visualize 
@@ -186,7 +188,7 @@ sec_simils <-
 
 # Export token weights
 # Export semantic similarity dictionary ####
-write_rds(sec_simils, paste0(data_path, "glove_models/SemSimilWeights-Security.rds", compress = "gz"))
+# write_rds(sec_simils, paste0(data_path, "glove_models/SemSimilWeights-Security.rds", compress = "gz"))
 
 
 # Visualize 
@@ -231,7 +233,7 @@ lib_simils <-
 
 
 # Export token weights
-write_rds(lib_simils, paste0(data_path, "glove_models/SemSimilWeights-LibDem.rds", compress = "gz"))
+# write_rds(lib_simils, paste0(data_path, "glove_models/SemSimilWeights-LibDem.rds", compress = "gz"))
 
 
 # Visualize 
@@ -276,6 +278,7 @@ coop_simils <-
   arrange(desc(coop)) %>% 
   mutate(rank.simil=row_number()) %>% 
   relocate(rank.simil) # rank by similarity to seed vector
+
 conf_simils <-
   find_sim_wvs(conf_vector, glove, top_n_res = 400000) %>% 
   as.data.frame() %>% 
@@ -298,7 +301,7 @@ sc <- coop_simils %>%
   arrange(desc(coop_confl))
 
 # Export token weights
-write_rds(sc, paste0(data_path, "glove_models/SemSimilWeights-CooperationConflict.rds", compress = "gz"))
+# write_rds(sc, paste0(data_path, "glove_models/SemSimilWeights-CooperationConflict.rds", compress = "gz"))
 
 
 # Visualize (ind scales)
@@ -434,7 +437,7 @@ sc <- friend_simils %>%
   arrange(desc(friend_foe))
 
 # Export token weights
-write_rds(sc, paste0(data_path, "glove_models/SemSimilWeights-FriendFoe.rds", compress = "gz"))
+# write_rds(sc, paste0(data_path, "glove_models/SemSimilWeights-FriendFoe.rds", compress = "gz"))
 
 
 # Visualize (ind scales)
@@ -576,7 +579,7 @@ sc <- friendly_simils %>%
   arrange(desc(gti))
 
 # Export token weights
-write_rds(sc, paste0(data_path, "glove_models/SemSimilWeights-GTI.rds", compress = "gz"))
+# write_rds(sc, paste0(data_path, "glove_models/SemSimilWeights-GTI.rds", compress = "gz"))
 
 
 # Visualize (ind scales)
@@ -689,7 +692,7 @@ ggsave("./output/glove_plots/GTI_ScalingWeigths.png", pl, width = 28, height = 1
 # 
 # # Export token weights
 # # Export semantic similarity dictionary ####
-# write_rds(dp_simils, paste0(data_path, "glove_models/SemSimilWeights-DigitalitySimple.rds", compress = "gz"))
+# # write_rds(dp_simils, paste0(data_path, "glove_models/SemSimilWeights-DigitalitySimple.rds", compress = "gz"))
 # 
 # 
 # # Visualize 
@@ -737,7 +740,7 @@ ggsave("./output/glove_plots/GTI_ScalingWeigths.png", pl, width = 28, height = 1
 # 
 # # Export token weights
 # # Export semantic similarity dictionary ####
-# write_rds(dp_simils2, paste0(data_path, "glove_models/SemSimilWeights-DigitalityAdvanced.rds", compress = "gz"))
+# # write_rds(dp_simils2, paste0(data_path, "glove_models/SemSimilWeights-DigitalityAdvanced.rds", compress = "gz"))
 # 
 # # Visualize 
 # pl <-
@@ -784,6 +787,344 @@ ggsave("./output/glove_plots/ComparingScalingWeigthsTokenLevel.png", comp.pl, wi
 
 
 
+# Internal consistency of the three friend/foe scales ####
 
+# My key ideas here - If the respective seed terms form poles of a meaningful scale in the vector space
+# defined by the pre-trained model two conditions should be conceptually met 
+
+# A) The seed terms on one side of the scale should be more similar to each other, than to the words on the other side
+# -> Can be assessed in two ways:
+# 1. Cosine similarity of their vectors gives us their direction in the pre-trained space
+# 2. Euclidean distance tells us how strongly the cluster (if vectors are similar in direction, but different in magnitude)
+
+# B) The lines going from words on one side of the pole to the words on the other end shoudl be parallel (if they represent a semantic scale)
+# -> Parrallelity means that the angle of these lines in the vectors space should be similar
+# -> Can be asseses along the cosine similarity of the difference vectors between all pairs from the opposing side
+
+
+# Given that the word vector space encodes numerous latent dimensions, these are not to be seen as absolute statements
+# But in relative terms, these metrics should help to asses which scale is more consistent within the meaning space
+
+
+# Function to collect the data for these scale consistency measures from pre-trained word vector model ###
+# lo_seeds: character vector containing the seed word sfor the lower end of the scale
+# hi_seeds: character vector containing the seed words for the upper end of the scale
+# wordvectors: Vectors from pre-trained model with tokens/words as column names and values in rows
+
+scale_consistency_data <- function(lo_seeds = character(NULL),
+                                   hi_seeds = character(NULL),
+                                   wordvectors = data.frame(NULL)) {
+  
+  # Function to calculate cosine similarity of two numerical vectors
+  cosine_similarity <- function(a, b) {
+    sum(a * b) / (sqrt(sum(a^2)) * sqrt(sum(b^2)))}
+  
+  # Function to compute Euclidean distance between two vectors
+  euclidean_distance <- function(vec1, vec2) {
+    sqrt(sum((vec1 - vec2)^2))}
+  
+  # Build data frame with all possible combinations of seed words
+  # indicating from which side of the scale they come from
+  all_words <- unique(c(lo_seeds, hi_seeds))
+  df <- expand.grid(a = all_words, b = all_words) %>% # All possible combinations of seed terms
+    subset(a != b) %>% # Exclcude combinations of a seed term with itself
+    mutate(lo_a = (a %in% lo_seeds), # Identify the seed pole the words come from
+           lo_b = (b %in% lo_seeds),
+           mixed_pair = (lo_a != lo_b),
+           lo_pair = (lo_a & lo_b),
+           hi_pair = (!lo_a & !lo_b)) %>% 
+    # select(-c(lo_a, lo_b)) %>% 
+    mutate(pair.sim = NA, # Columns to store the target values
+           pair.dist = NA,
+           vec_a = NA,
+           vec_b = NA,
+           diff.vec = NA)
+  
+  # Get cosine similarity and difference vector for each word pair
+  for (i in 1:nrow(df)) {
+    
+    # Get and store vectors of each word in the pair from pre-trained model
+    vec_a <- wordvectors[[df$a[i]]]
+    vec_b <- wordvectors[[df$b[i]]]
+    
+    df$vec_a[i] <- list(vec_a)
+    df$vec_b[i] <- list(vec_b)
+    
+    # Calculate cosine similarity of the two vectors
+    df$pair.sim[i] = cosine_similarity(vec_a, vec_b)
+    
+    # Calculate Euclidean distance of the two vectors
+    df$pair.dist[i] = euclidean_distance(vec_a, vec_b)    
+    
+    # Store difference vector (line combining both words in the vector space)
+    diff_vec <- vec_b - vec_a
+    df$diff.vec[i] <- list(diff_vec)
+    
+  }
+  
+  # Clean up
+  rm(vec_a, vec_b, diff_vec)
+  
+  # Pair type variable
+  df$pair.type <- ifelse(df$mixed_pair, "Seeds from opposing poles",
+                         ifelse(df$lo_pair, "Seeds on lower pole",
+                                "Seeds on upper pole"))
+  df$pair.type <- factor(df$pair.type, levels = c("Seeds on lower pole",
+                                                  "Seeds from opposing poles",
+                                                  "Seeds on upper pole"))
+  
+  # Return the resulting data
+  return(df)
+  
+}
+
+
+# Get values for the GTI scale
+
+dict <- dictionary(file = paste0(data_path, 'external_data/GTI_keywords.yml'))
+friendly_vocab = dict$seedwords$friendly
+hostile_vocab = dict$seedwords$hostile
+
+df.gti <- scale_consistency_data(lo_seeds = friendly_vocab,
+                                 hi_seeds = hostile_vocab,
+                                 wordvectors = glove) %>% 
+  mutate(scale = "GTI (Hostility)")
+
+
+
+# Get Values for the Friend-Foe scale 
+
+friend_vocab = c("friend", "partner",  "ally",  "peace", "peaceful",   "friendly", "cooperative")
+foe_vocab =    c("foe",    "opponent", "enemy", "war",   "aggressive", "hostile",  "uncooperative")
+
+df.ff <- scale_consistency_data(lo_seeds = friend_vocab,
+                                 hi_seeds = foe_vocab,
+                                 wordvectors = glove) %>% 
+  mutate(scale = "Friend-Foe")
+
+
+# Get Values for the Coop/Conflit scale 
+coop_vocab <- c("cooperation", "agreement",    "support",    "collaboration", "unity")
+conf_vocab <- c("conflict",    "disagreement", "opposition", "confrontation", "hostility")
+
+df.cc <- scale_consistency_data(lo_seeds = coop_vocab,
+                                hi_seeds = conf_vocab,
+                                wordvectors = glove) %>% 
+  mutate(scale = "Coop-Conflict")
+
+
+# Get values for a sentiment scale (benchmarking)
+pos_vocab <- c("good", "positive", "exellent",   "superior", "wonderful")
+neg_vocab <- c("bad",  "negative",  "terrible", "inferior",  "awful")
+
+df.sent <- scale_consistency_data(lo_seeds = pos_vocab,
+                                hi_seeds = neg_vocab,
+                                wordvectors = glove) %>% 
+  mutate(scale = "Sentiment (benchmark)")
+
+
+
+# Assess clustering of the seed poles in the vector space
+
+comp.df <- rbind(
+  df.gti %>% select(scale, pair.type, pair.sim, pair.dist),
+  df.ff %>% select(scale, pair.type, pair.sim, pair.dist),
+  df.cc %>% select(scale, pair.type, pair.sim, pair.dist),
+  df.sent %>% select(scale, pair.type, pair.sim, pair.dist)) %>% 
+  pivot_longer(cols = 3:4, names_to = "measure", values_to = "value") %>% 
+  mutate(measure = ifelse(measure == "pair.sim", "Cosine similarity", "Euclidean distance"))
+
+pl1 <- 
+  ggplot(comp.df %>% filter(measure == "Cosine similarity"), aes(x =value, y = pair.type,)) + 
+  stat_summary(geom = "pointrange", fun.data = mean_cl_boot) + 
+  facet_grid(. ~ scale)+
+  labs(title = "Cosine similarities",
+       subtitle = "Seed word pairs representing opposing poles should have lower similarities than seed word pairs representing the same pole",
+       y = "",
+       x ="\nAverage cosine similarity across seed-word pairs\n(with bootstrapped 95% c.i.s)")+
+  theme_bw()+
+  theme(plot.title = element_text(face = "bold.italic"),
+        strip.text = element_text(face = "bold"),
+        axis.text = element_text(color = "black"))
+pl2 <-
+  ggplot(comp.df %>% filter(measure == "Euclidean distance"), aes(x =value, y = pair.type,)) + 
+  stat_summary(geom = "pointrange", fun.data = mean_cl_boot) + 
+  facet_grid(. ~ scale)+
+  labs(title = "Euclidean distances",
+       subtitle = "Seed word pairs representing opposing poles should have higher distances (= cluster less) than seed word pairs representing the same pole",
+       y = "",
+       x ="\nAverage Euclidean distance across seed-word pairs\n(with bootstrapped 95% c.i.s)")+
+  theme_bw()+
+  theme(plot.title = element_text(face = "bold.italic"),
+        strip.text = element_text(face = "bold"),
+        axis.text = element_text(color = "black"))
+
+combined_plot <- (pl1/pl2) +
+  plot_annotation(
+    title = "How much do the seed words supplied for each scale\ncluster in the vector space?\n",
+    caption = "\nBased on comparing the word vectors from pre-trained model for each pariwise combination of seed words for each scale.",
+    theme = theme(
+      plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+      plot.caption = element_text(size = 10, hjust = 1, color = "gray40")
+    )
+  )
+combined_plot
+
+ggsave("./output/glove_plots/SeedWordClustering.png", combined_plot, width = 30, height = 18, units = "cm")
+
+
+
+
+# Parallelity ####
+
+# Function to calculate cosine similarity of two numerical vectors
+cosine_similarity <- function(a, b) {
+  sum(a * b) / (sqrt(sum(a^2)) * sqrt(sum(b^2)))}
+
+
+# GTI
+
+df <- df.gti %>% 
+  filter(lo_a & !lo_b) %>% # Only directed pairs from lo to hi end of scale
+  mutate(pair = paste0(a, "-", b)) %>% 
+  select(pair, diff.vec) # Only the difference vectors (lines connecting the pair in the space)
+
+# Matrix with cosine sims for each combination of vectors
+gti.p <- matrix(NA, nrow = nrow(df), ncol = nrow(df))
+for (i in 1:nrow(df)) {
+  for (j in 1:nrow(df)) {
+    gti.p[i, j] <- cosine_similarity(df$diff.vec[[i]], df$diff.vec[[j]])
+  }
+}
+
+# Long form of unique combinations
+pa.gti <- as.data.frame(as.table(gti.p)) %>%
+  mutate(Var1 = as.numeric(Var1),
+         Var2 = as.numeric(Var2)) %>% 
+  filter(Var1 < Var2) %>%  # Keep only unique (upper triangular) pairs
+  filter(Var1 != Var2) %>% # Remove diagonal as well
+  rename(sim = Freq) %>% 
+  mutate(scale = "GTI (Hostility)") %>% 
+  mutate(pair1 = df$pair[Var1],
+         pair2 = df$pair[Var2])
+
+# "aids" is the culprit here ...
+
+
+# Friend-Foe
+
+df <- df.ff %>% 
+  filter(lo_a & !lo_b) %>% # Only directed pairs from lo to hi end of scale
+  mutate(pair = paste0(a, "-", b)) %>% 
+  select(pair, diff.vec) # Only the difference vectors (lines connecting the pair in the space)
+
+# Matrix with cosine sims for each combination of vectors
+ff.p <- matrix(NA, nrow = nrow(df), ncol = nrow(df))
+for (i in 1:nrow(df)) {
+  for (j in 1:nrow(df)) {
+    ff.p[i, j] <- cosine_similarity(df$diff.vec[[i]], df$diff.vec[[j]])
+  }
+}
+
+# Long form of unique combinations
+pa.ff <- as.data.frame(as.table(ff.p)) %>%
+  mutate(Var1 = as.numeric(Var1),
+         Var2 = as.numeric(Var2)) %>% 
+  filter(Var1 < Var2) %>%  # Keep only unique (upper triangular) pairs
+  filter(Var1 != Var2) %>% # Remove diagonal as well
+  rename(sim = Freq) %>% 
+  mutate(scale = "Friend-Foe") %>% 
+  mutate(pair1 = df$pair[Var1],
+         pair2 = df$pair[Var2])
+
+# adjective-noun combinations
+
+
+# Cooperation- Conflict
+
+df <- df.cc %>% 
+  filter(lo_a & !lo_b) %>% # Only directed pairs from lo to hi end of scale
+  mutate(pair = paste0(a, "-", b)) %>% 
+  select(pair, diff.vec) # Only the difference vectors (lines connecting the pair in the space)
+
+# Matrix with cosine sims for each combination of vectors
+cc.p <- matrix(NA, nrow = nrow(df), ncol = nrow(df))
+for (i in 1:nrow(df)) {
+  for (j in 1:nrow(df)) {
+    cc.p[i, j] <- cosine_similarity(df$diff.vec[[i]], df$diff.vec[[j]])
+  }
+}
+
+# Long form of unique combinations
+pa.cc <- as.data.frame(as.table(cc.p)) %>%
+  mutate(Var1 = as.numeric(Var1),
+         Var2 = as.numeric(Var2)) %>% 
+  filter(Var1 < Var2) %>%  # Keep only unique (upper triangular) pairs
+  filter(Var1 != Var2) %>% # Remove diagonal as well
+  rename(sim = Freq) %>% 
+  mutate(scale = "Coop-Conflict") %>% 
+  mutate(pair1 = df$pair[Var1],
+         pair2 = df$pair[Var2])
+
+
+# Sentiment
+
+df <- df.sent %>% 
+  filter(lo_a & !lo_b) %>% # Only directed pairs from lo to hi end of scale
+  mutate(pair = paste0(a, "-", b)) %>% 
+  select(pair, diff.vec) # Only the difference vectors (lines connecting the pair in the space)
+
+# Matrix with cosine sims for each combination of vectors
+sent.p <- matrix(NA, nrow = nrow(df), ncol = nrow(df))
+for (i in 1:nrow(df)) {
+  for (j in 1:nrow(df)) {
+    sent.p[i, j] <- cosine_similarity(df$diff.vec[[i]], df$diff.vec[[j]])
+  }
+}
+
+# Long form of unique combinations
+pa.sent <- as.data.frame(as.table(sent.p)) %>%
+  mutate(Var1 = as.numeric(Var1),
+         Var2 = as.numeric(Var2)) %>% 
+  filter(Var1 < Var2) %>%  # Keep only unique (upper triangular) pairs
+  filter(Var1 != Var2) %>% # Remove diagonal as well
+  rename(sim = Freq) %>% 
+  mutate(scale = "Sentiment (benchmark)") %>% 
+  mutate(pair1 = df$pair[Var1],
+         pair2 = df$pair[Var2])
+
+
+
+# Compare average parrallelity in directed pairs per scale 
+
+df <- rbind(
+  pa.gti,
+  pa.ff,
+  pa.cc,
+  pa.sent
+)
+
+
+
+pl.pa <-
+  ggplot(df, aes(x = sim, y = scale)) + 
+  stat_summary(geom = "pointrange", fun.data = mean_cl_boot) + 
+  # facet_grid(. ~ scale)+
+  labs(title = "Average parallelity of seed word pairs from opposing poles",
+       subtitle = "The more the lines connecting any word in the lower seed set to any word in the upper set\nare parallel, the more consistent is the scale in the given vector space.",
+       y = "",
+       x ="\nAverage cosine similarity of difference vectors between opposing seeds\n(with bootstrapped 95% c.i.s)",
+       caption = "\nIf all lines would be perfectly parallel in the vector space, the cosine similarity of the difference vectors would equal 1.")+
+  theme_bw()+
+  theme(plot.title = element_text(face = "bold.italic"),
+        strip.text = element_text(face = "bold"),
+        axis.text = element_text(color = "black"))
+
+ggsave("./output/glove_plots/SeedWordParallelity.png", pl.pa, width = 20, height = 8, units = "cm")
+
+
+
+# Inspect pa data qualitatively
+# Which pairs / words are particularly off?
 
 
