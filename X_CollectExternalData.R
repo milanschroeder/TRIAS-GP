@@ -14,12 +14,12 @@ library(desta) # https://github.com/pachadotdev/desta
 
 # data_path <- "~/Nextcloud/Shared/TRIAS Brückenprojekt/Daten/" # MS/WZB
 # data_path <- "C:/Users/rauh/NextCloudSync/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/WZB
-# data_path <- "D:/WZB-Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/HP
-data_path <- "C:/Users/rauh/Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/TP
+data_path <- "D:/WZB-Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/HP
+# data_path <- "C:/Users/rauh/Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/TP
 
 
-
-# V-Dem Data ####
+# Regime type / liberal democracy index ####
+# V-Dem Data
 
 # Inspect what's in there
 # cb <- codebook %>% 
@@ -53,8 +53,8 @@ gc()
 
 
 
-
-# Design of Trade Agreements Database (DESTA).####
+# Countries with Free Trade agreements with the EU ####
+# Design of Trade Agreements Database (DESTA) 
 
 # Codebook: https://www.designoftradeagreements.org/media/filer_public/e2/46/e246b1d6-0992-4bdc-905d-26cb93a9f7fe/desta_codebook_02_00.pdf
 # "EC is used throughout instead of EEC, EU ec."
@@ -119,4 +119,77 @@ table(df.desta$year)
 
 # Export
 write_rds(df.desta, paste0(data_path, "external_data/EU-FTAs.rds"))
+
+
+
+
+
+# Engagement in armed conflicts ####
+# UCDP/PRIO Armed Conflict Dataset version 24.1: https://ucdp.uu.se/downloads/index.html#armedconflict
+
+ucdp.raw <- read_rds(paste0(data_path, "external_data/ucdp-prio-acd-241.rds"))
+
+# Data contains the following info relevant to us
+# Primary and secondary conflict parties on both sides of the conflict in a given year
+# Also encoded as Gleditsch/Ward country codes with are part of countrycode (here: the gwno variables), cf. http://ksgleditsch.com/data-4.html
+# Note: Multiple, comma-separated entries per cell possible (sigh)
+# intensity_level:  1 = Minor (1-999 battle deaths), 2 = War (> 1000 deaths)
+# type_of_conflict: 1 extrasystemic, 2 = interstate, 3 = intrastate, 4 = internationalized intrastate
+# incompatibility: 1 = about territory, 2 = about government, 3 = about both
+# year 
+
+ucdp <- ucdp.raw %>% 
+  select(year, conflict_id, type_of_conflict, intensity_level, incompatibility, 
+         gwno_a, gwno_a_2nd, gwno_b, gwno_b_2nd) %>% 
+  mutate(across(starts_with("gwno"), as.character)) %>% # Some were numeric, some character (commas, see above ...)
+  pivot_longer(cols = 6:9, names_to = "side", values_to = "ctry") %>% # For us its only important whther a country was involved in conflict in a given year (not which side it was)
+  filter(!is.na(ctry)) %>% 
+  mutate(side = str_remove(side, "gwno_")) %>% 
+  separate_rows(ctry, sep = ", ") %>% # Split comma-separated values to one row per participating country
+  mutate(ctry = as.numeric(ctry)) %>% 
+  mutate(country = countrycode(ctry, origin = "gwn", destination = "country.name"),
+         iso2c = countrycode(ctry, origin = "gwn", destination = "iso2c")) %>% 
+  arrange(year, side)
+
+# Some Failed matches .... 55, 751, 816, 972
+
+# 816 - Vietnam, Democratic Republic of (as opposed to republic of ...)
+# dict <- newsmap::data_dictionary_newsmap_en has only Vietnam entry
+# ucdp$country[ucdp$ctry == 816] <- "Vietnam"
+# ucdp$iso2c[ucdp$ctry == 972] <- "VN"
+# We dpn't do this because this would duplicate obs during the Vietnam war (and only there ...)
+
+# The others don't exist in the original list of states - http://ksgleditsch.com/data/iisystem.dat
+# But some in the list of microstates: http://ksgleditsch.com/data/microstatessystem.dat
+ucdp$country[ucdp$ctry == 55] <- "Grenada"
+ucdp$iso2c[ucdp$ctry == 55] <- "GD"
+ucdp$country[ucdp$ctry == 972] <- "Tonga"
+ucdp$iso2c[ucdp$ctry == 972] <- "TO"
+
+# Drop obs for which no country can be assigned
+ucdp <- ucdp %>% filter(!is.na(country)) 
+
+
+# Export different aggregations
+
+ucdp %>% # All armed conflicts a country was engaged in
+  group_by(year, country, iso2c) %>% 
+  summarise(armed_conflicts = n()) %>% 
+  ungroup() %>% 
+  write_rds(paste0(data_path, "external_data/ArmedConflicts_By_CTRY_YEAR.rds"))
+
+ucdp %>% 
+  filter(intensity_level == 2) %>% # Wars only
+  group_by(year, country, iso2c) %>% 
+  summarise(wars = n()) %>% 
+  ungroup() %>% 
+  write_rds(paste0(data_path, "external_data/Wars_By_CTRY_YEAR.rds"))
+
+ucdp %>% 
+  filter(incompatibility != 2) %>% # Territorial conflicts only
+  group_by(year, country, iso2c) %>% 
+  summarise(terr_conflicts = n()) %>% 
+  ungroup() %>% 
+  write_rds(paste0(data_path, "external_data/TerritorialConflicts_By_CTRY_YEAR.rds"))
+
 
