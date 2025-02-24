@@ -10,6 +10,7 @@ library(tidyverse) # Easily Install and Load the 'Tidyverse' CRAN v2.0.0
 library(countrycode)
 library(vdemdata) # https://github.com/vdeminstitute/vdemdata
 library(desta) # https://github.com/pachadotdev/desta
+library(readxl)
 
 
 # data_path <- "~/Nextcloud/Shared/TRIAS Brückenprojekt/Daten/" # MS/WZB
@@ -193,3 +194,90 @@ ucdp %>%
   write_rds(paste0(data_path, "external_data/TerritorialConflicts_By_CTRY_YEAR.rds"))
 
 
+# Economic / GDP data ####
+# From the IMF's world economic outlook
+# https://www.imf.org/external/datamapper/NGDPD@WEO/OEMDC/ADVEC/WEOWORLD
+
+# weo <- read_xls(paste0(data_path, "external_data/WEO.xls"), col_types = "text") # Fuckin Excel ...
+weo <- read_delim(paste0(data_path, "external_data/WEO.csv"), delim = ";", locale = locale(decimal_mark = "."))
+
+
+table(weo$`Subject Descriptor`)
+table(weo$Units)
+
+# GDP absolute (in current prices and US.Dollars !?)
+gdp <- weo %>% 
+  filter(`Subject Descriptor` == "Gross domestic product, current prices" &
+           Units == 'U.S. dollars')
+table(gdp$Scale) # Billions
+gdp <- gdp %>% 
+  select(-c(`WEO Country Code`, `Subject Descriptor`, Units, Scale, `Country/Series-specific Notes`, `Estimates Start After`)) %>% 
+  rename(iso3 = ISO,
+         country = Country) %>% 
+  pivot_longer(cols = 3:ncol(.), names_to = "year", values_to = "gdp_billions") %>% 
+  mutate(gdp_billions = na_if(gdp_billions, "n/a")) %>% 
+  mutate(gdp_billions = str_remove_all(gdp_billions, fixed(","))) %>% # Watch out, excel ...
+  mutate(year = as.numeric(year),
+         gdp_billions = as.numeric(gdp_billions)) %>% 
+  mutate(country = str_replace(country, "Türkiye", "Turkey")) %>% 
+  mutate(iso2c = countrycode(country, origin = "country.name", destination = "iso2c"))
+gdp$iso2c[gdp$country == "Kosovo"] = "XK" # Inoffcial
+gdp$iso2c[gdp$country == "Micronesia"] = "FM" 
+
+
+# GDP per capita (in current prices and US.Dollars !?)
+gdp_cap <- weo %>% 
+  filter(`Subject Descriptor` == "Gross domestic product per capita, current prices" &
+           Units == 'U.S. dollars')
+table(gdp_cap$Scale) # Not specified
+gdp_cap <- gdp_cap %>% 
+  select(-c(`WEO Country Code`, `Subject Descriptor`, Units, Scale, `Country/Series-specific Notes`, `Estimates Start After`)) %>% 
+  rename(iso3 = ISO,
+         country = Country) %>% 
+  pivot_longer(cols = 3:ncol(.), names_to = "year", values_to = "gdp_capita") %>% 
+  mutate(gdp_capita = na_if(gdp_capita, "n/a")) %>% 
+  mutate(gdp_capita = str_remove_all(gdp_capita, fixed(","))) %>% # Watch out, excel ...
+  mutate(year = as.numeric(year),
+         gdp_capita = as.numeric(gdp_capita)) %>% 
+  mutate(country = str_replace(country, "Türkiye", "Turkey")) %>% 
+  mutate(iso2c = countrycode(country, origin = "country.name", destination = "iso2c"))
+gdp_cap$iso2c[gdp_cap$country == "Kosovo"] = "XK" # Inofficial
+gdp_cap$iso2c[gdp_cap$country == "Micronesia"] = "FM" 
+
+
+# GDP world share
+gdp_world <- weo %>% 
+  filter(`Subject Descriptor` == "Gross domestic product based on purchasing-power-parity (PPP) share of world total")
+table(gdp_world$Scale) # Not specified
+gdp_world <- gdp_world %>% 
+  select(-c(`WEO Country Code`, `Subject Descriptor`, Units, Scale, `Country/Series-specific Notes`, `Estimates Start After`)) %>% 
+  rename(iso3 = ISO,
+         country = Country) %>% 
+  pivot_longer(cols = 3:ncol(.), names_to = "year", values_to = "gdp_worldshare") %>% 
+  mutate(gdp_worldshare = na_if(gdp_worldshare, "n/a")) %>% 
+  mutate(gdp_worldshare = str_remove_all(gdp_worldshare, fixed(","))) %>% # Watch out, excel ...
+  mutate(year = as.numeric(year),
+         gdp_worldshare = as.numeric(gdp_worldshare)) %>% 
+  mutate(country = str_replace(country, "Türkiye", "Turkey")) %>% 
+  mutate(iso2c = countrycode(country, origin = "country.name", destination = "iso2c"))
+gdp_world$iso2c[gdp_world$country == "Kosovo"] = "XK" # Inofficial
+gdp_world$iso2c[gdp_world$country == "Micronesia"] = "FM" 
+
+
+# GDP growth
+gdp_world <- weo %>% 
+  filter(`Subject Descriptor` == "Gross domestic product based on purchasing-power-parity (PPP) share of world total")
+table(gdp_world$Scale) # Not specified
+gdp_world <- gdp_world %>% 
+  select(-c(`WEO Country Code`, `Subject Descriptor`, Units, Scale, `Country/Series-specific Notes`, `Estimates Start After`)) %>% 
+  rename(iso3 = ISO,
+         country = Country) %>% 
+  pivot_longer(cols = 3:ncol(.), names_to = "year", values_to = "gdp_worldshare") %>% 
+  mutate(gdp_worldshare = na_if(gdp_worldshare, "n/a")) %>% 
+  mutate(gdp_worldshare = str_remove_all(gdp_worldshare, fixed(","))) %>% # Watch out, excel ...
+  mutate(year = as.numeric(year),
+         gdp_worldshare = as.numeric(gdp_worldshare)) %>% 
+  mutate(country = str_replace(country, "Türkiye", "Turkey")) %>% 
+  mutate(iso2c = countrycode(country, origin = "country.name", destination = "iso2c"))
+gdp_world$iso2c[gdp_world$country == "Kosovo"] = "XK" # Inofficial
+gdp_world$iso2c[gdp_world$country == "Micronesia"] = "FM" 
