@@ -19,8 +19,8 @@ library(magrittr)
 
 # data_path <- "~/Nextcloud/Shared/TRIAS Brückenprojekt/Daten/" # MS/WZB
 # data_path <- "C:/Users/rauh/NextCloudSync/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/WZB
-data_path <- "D:/WZB-Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/HP
-# data_path <- "C:/Users/rauh/Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/TP
+# data_path <- "D:/WZB-Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/HP
+data_path <- "C:/Users/rauh/Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/TP
 
 
 
@@ -77,6 +77,7 @@ tokens_sents <-
 # Merge token level data with weights and aggregate to sentence level ####
 # ~ X mins on HP
 
+start <- Sys.time()
 sent_weigths <- tokens_sents %>% 
   left_join(
   simils,
@@ -84,7 +85,9 @@ sent_weigths <- tokens_sents %>%
   group_by(sentence_id) %>% 
   summarise(across(where(is.numeric), mean, na.rm = T)) %>% # Means of semantic simil weights by sentences, unknown tokens excluded (grouping var should be automatically excluded)
   ungroup()
+Sys.time()-start
 
+# Export
 write_rds(sent_weigths, paste0(data_path, "cleaned_data/scaling_glove_sentlevel.rds"))
 rm(tokens_sents, sent_weigths)
 gc()
@@ -110,6 +113,7 @@ tokens_para <-
 # Merge token level data with weights and aggregate to paragraph level ####
 # ~ X mins on HP
 
+start <- Sys.time()
 para_weights <- tokens_para %>% 
   left_join(
   simils,
@@ -117,6 +121,7 @@ para_weights <- tokens_para %>%
   group_by(para_id) %>% 
   summarise(across(where(is.numeric), mean, na.rm = T)) %>% # Means of semantic simil weights by para, unknown tokens excluded (grouping var should be automatically excluded)
   ungroup()
+Sys.time()-start
 
 # Export
 write_rds(tokens_para, paste0(data_path, "scaling_glove_paralevel.rds"))
@@ -127,7 +132,7 @@ rm(tokens_para)
 
 # Tokenize documents ####
 # ~ XX mins on HP
-  
+
 tokens_doc <- 
   read_rds(paste0(data_path, "data_doclevel.rds")) %>% select(text = text_doc, doc_id) %>% 
   mutate(text = str_remove_all(text, "\'|’|#|\\.|[0-9]"), # choose to just remove . as u.s. much more relvant than www.ec.europa.eu
@@ -144,7 +149,8 @@ tokens_doc <-
 
 # Merge token level data with weights and aggregate to document level ####
 # ~ X mins on HP
-  
+
+start <- Sys.time()
 doc_weights <-
   tokens_doc %>% 
   left_join(
@@ -154,6 +160,7 @@ doc_weights <-
   group_by(doc_id) %>% 
   summarise(across(where(is.numeric), mean, na.rm = T)) %>% # Means of semantic simil weights by para, unknown tokens excluded (grouping var automatically excluded)
   ungroup()
+Sys.time()-start
 
 # Export
 write_rds(tokens_doc, paste0(data_path, "cleaned_data/scaling_glove_doclevel.rds"))
