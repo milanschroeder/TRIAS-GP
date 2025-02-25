@@ -11,6 +11,7 @@ library(tidyverse) # Easily Install and Load the 'Tidyverse' CRAN v2.0.0
 library(tidytext) # Text Mining using 'dplyr', 'ggplot2', and Other Tidy Tools CRAN v0.4.1
 library(quanteda) # Quantitative Analysis of Textual Data CRAN v3.3.0
 library(magrittr)
+library(GGally)
 
 
 
@@ -75,7 +76,7 @@ tokens_sents <-
 
 
 # Merge token level data with weights and aggregate to sentence level ####
-# ~ X mins on HP
+# ~ 1.8 hours mins on TP
 
 start <- Sys.time()
 sent_weigths <- tokens_sents %>% 
@@ -97,7 +98,7 @@ gc()
 # ~ XXX mins on HP
 
 tokens_para <- 
-    read_rds(paste0(data_path, "data_paralevel.rds")) %>% select(text = text_para, para_id) %>% 
+    read_rds(paste0(data_path, "cleaned_data/data_paralevel.rds")) %>% select(text = text_para, para_id) %>% 
       mutate(text = str_remove_all(text, "\'|’|#|\\.|[0-9]"), # choose to just remove . as u.s. much more relvant than www.ec.europa.eu
              text = str_replace_all(text, "_|-", " ")) %>% 
       unnest_tokens(input = text, # name of text var
@@ -111,7 +112,7 @@ tokens_para <-
 
 
 # Merge token level data with weights and aggregate to paragraph level ####
-# ~ X mins on HP
+# ~ 57 mins on TP
 
 start <- Sys.time()
 para_weights <- tokens_para %>% 
@@ -124,7 +125,7 @@ para_weights <- tokens_para %>%
 Sys.time()-start
 
 # Export
-write_rds(tokens_para, paste0(data_path, "scaling_glove_paralevel.rds"))
+write_rds(tokens_para, paste0(data_path, "cleaned_data/scaling_glove_paralevel.rds"))
 rm(tokens_para)
 
 
@@ -134,7 +135,7 @@ rm(tokens_para)
 # ~ XX mins on HP
 
 tokens_doc <- 
-  read_rds(paste0(data_path, "data_doclevel.rds")) %>% select(text = text_doc, doc_id) %>% 
+  read_rds(paste0(data_path, "cleaned_data/data_doclevel.rds")) %>% select(text = text_doc, doc_id) %>% 
   mutate(text = str_remove_all(text, "\'|’|#|\\.|[0-9]"), # choose to just remove . as u.s. much more relvant than www.ec.europa.eu
          text = str_replace_all(text, "_|-", " ")) %>% 
   unnest_tokens(input = text, # name of text var
@@ -143,12 +144,12 @@ tokens_doc <-
                 to_lower = T) %>% 
   # remove meaningless tokens:
   filter(!(token %in% quanteda::stopwords("en"))) %>% # Exclude en stopwords
-  filter(str_detect(token, "[a-z????]")) %>% # Only tokens with letters in them
+  filter(str_detect(token, "[a-z]")) %>% # Only tokens with letters in them
   filter(nchar(token) > 1)
 
 
 # Merge token level data with weights and aggregate to document level ####
-# ~ X mins on HP
+# ~ 2.9 h on TP
 
 start <- Sys.time()
 doc_weights <-
@@ -166,6 +167,8 @@ Sys.time()-start
 write_rds(tokens_doc, paste0(data_path, "cleaned_data/scaling_glove_doclevel.rds"))
 rm(tokens_doc)
 gc()
+
+
 
 
 # Compare different scales on sentence level ####
