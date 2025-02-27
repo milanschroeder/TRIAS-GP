@@ -1,7 +1,7 @@
 #########################################################################
 # Project:  TRIAS - Geopolitics
 # Tasks:    Collect country/year data (explanatory factors)
-# Author:   @ChRauh (23.02.2025)
+# Author:   @ChRauh (27.02.2025)
 #########################################################################
 
 
@@ -9,6 +9,7 @@
 library(tidyverse) # Easily Install and Load the 'Tidyverse' CRAN v2.0.0 
 library(countrycode)
 library(readxl) 
+library(cepiigeodist)
 library(igoR)
 library(vdemdata) # https://github.com/vdeminstitute/vdemdata
 library(desta) # https://github.com/pachadotdev/desta
@@ -33,7 +34,7 @@ data_path <- "D:/WZB-Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/
 
 
 # Available databases in IMF API
-imf_ids() # DOT | Direction of Trade Statistics (DOTS) is waht we want
+imf_db <- imf_ids() # DOT | Direction of Trade Statistics (DOTS) is what we want
 
 # Dimensions of DOT
 # imf_codelist(database_id = "DOT")
@@ -124,13 +125,35 @@ for (i in 1:nrow(eu_tb)) {
 eu_tb_df$eu_tb_with_ctry <- eu_tb_df$eu_tb_with_ctry %>% as.numeric() # Clean up a bit
 
 
+# Total EU exports and imports per year
+# Needed for calculating EU dependencies on specific countries 
+
+eu_exports_ann <- eu_exports_df %>% 
+  group_by(year) %>% 
+  summarise(eu_exports_total = sum(eu_exports_to_ctry, na.rm = T)) %>% 
+  ungroup()
+
+eu_imports_ann <- eu_imports_df %>% 
+  group_by(year) %>% 
+  summarise(eu_imports_total = sum(eu_imports_from_ctry, na.rm = T)) %>% 
+  ungroup()
+
 
 # Merge trade data 
-
 eutrade <- eu_tb_df %>% # The longest one 
   left_join(eu_exports_df, by = c("ctry", "year")) %>% 
   left_join(eu_imports_df, by = c("ctry", "year")) %>% 
+  left_join(eu_exports_ann, by = "year") %>% 
+  left_join(eu_imports_ann, by = "year") %>% 
   mutate(year = as.numeric(year))
+
+
+# Calculate the EU'S dependencies on a country in a given year
+eutrade <- eutrade %>% 
+  mutate(eu_import_dependency = eu_imports_from_ctry/eu_imports_total,
+         eu_export_dependency = eu_exports_to_ctry/eu_exports_total,
+         eu_trade_dependeny = (eu_imports_from_ctry+eu_exports_to_ctry)/(eu_imports_total+eu_exports_total))
+
 
 # Clean country names (cross-checked before)
 # Note that this includes many non-state units 
@@ -442,6 +465,7 @@ write_rds(econ, paste0(data_path, "external_data/WEO_GDP_By_CTRY_YEAR.rds"))
 # Military Expenditure data ####
 # SIPRI MilEx Data: https://www.sipri.org/databases/milex
 
+# GDP share of Milex
 sipri <- read_delim(paste0(data_path, "external_data/SIPRI-Milex-data-1948-2023_GDPshare_Cleaned.csv"), 
                     delim = ";", locale = locale(decimal_mark = ".")) %>% 
   pivot_longer(cols = 2:ncol(.), names_to = "year", values_to = "milex_share") %>% 
@@ -472,17 +496,56 @@ sipri$country[sipri$ctry == "Yugoslavia"] <- "Yugoslavia"
 # There are two countries that create duplicates, both of which are completely empty, though
 sipri <- sipri %>% 
   filter(ctry != "USSR") %>% # Russia with data from 1994 onwards
-  filter(ctry != "Czech Republic") # Czechia with data from 1993 onwards
+  filter(ctry != "Czech Republic") %>% # Czechia with data from 1993 onwards
+  filter(!is.na(iso2c)) # Drop all unidentified cases
 
 
+# Total Milex (in current USD)
+sipri2 <- read_delim(paste0(data_path, "external_data/sipri-Milex-data-1948-2023_TotalCurrentUSD_Cleaned.csv"), 
+                    delim = ";", locale = locale(decimal_mark = ".")) %>% 
+  pivot_longer(cols = 2:ncol(.), names_to = "year", values_to = "milex_total") %>% 
+  mutate(milex_total = milex_total %>% 
+           str_replace_all(fixed(","), ".") %>% 
+           na_if("...") %>% 
+           as.numeric(),
+         milex_total = milex_total) %>% 
+  rename(ctry = Country) %>% 
+  mutate(ctry = str_replace(ctry, "Türkiye", "Turkey")) %>% 
+  mutate(ctry = str_replace(ctry, "Czechoslovakia", "Czech Republic")) %>% 
+  mutate(iso2c = countrycode(ctry, origin = "country.name", destination = "iso2c"),
+         country = countrycode(iso2c, origin = "iso2c", destination = "country.name"))
+
+# Clean unmatched cases
+# "Yemen, North" is empty throughout
+
+sipri2$iso2c[sipri2$ctry == "German Democratic Republic"] <- "DD"
+sipri2$country[sipri2$ctry == "German Democratic Republic"] <- "German Democratic Republic"
+
+sipri2$iso2c[sipri2$ctry == "Kosovo"] <- "KV" # Inofficial, nesmap
+sipri2$country[sipri2$ctry == "Kosovo"] <- "Kosovo"
+
+sipri2$iso2c[sipri2$ctry == "Yugoslavia"] <- "YU"
+sipri2$country[sipri2$ctry == "Yugoslavia"] <- "Yugoslavia"
+
+# There are two countries that create duplicates, both of which are completely empty, though
+sipri2 <- sipri2 %>% 
+  filter(ctry != "USSR") %>% # Russia with data from 1994 onwards
+  filter(ctry != "Czech Republic") %>% # Czechia with data from 1993 onwards
+  filter(!is.na(iso2c)) # Drop all unidentified cases
 
 
+# Combine relative and absolute numbers
+sipri <- sipri %>% 
+  select(country, iso2c, year, milex_share) %>% 
+  left_join(sipri2 %>% 
+              select(country, iso2c, year, milex_total),
+            by = c("country", "iso2c", "year"))
 
-# Drop unidentified cases and export
+
+# Export
 sipri %>% 
-  filter(!is.na(iso2c)) %>% 
   mutate(year = year %>% as.numeric()) %>% 
-  write_rds(paste0(data_path, "external_data/MilitaryExpenditureShare_by_CTRY_YEAR.rds"))
+  write_rds(paste0(data_path, "external_data/MilitaryExpenditure_by_CTRY_YEAR.rds"))
 
 
 
@@ -528,8 +591,8 @@ panel <- data.frame(iso2c = rep(nm.countries$iso2c, length(years)),
 
 cy <- 
   panel %>% 
-  left_join(read_rds(paste0(data_path, "external_data/MilitaryExpenditureShare_by_CTRY_YEAR.rds")) %>% 
-              select(iso2c, year, milex_share), 
+  left_join(read_rds(paste0(data_path, "external_data/MilitaryExpenditure_by_CTRY_YEAR.rds")) %>% 
+              select(iso2c, year, milex_share, milex_total), 
             by = c("iso2c", "year")) %>% 
   left_join(read_rds(paste0(data_path, "external_data/WEO_GDP_By_CTRY_YEAR.rds")) %>% 
               select(iso2c, year, starts_with("gdp")), 
@@ -631,12 +694,12 @@ cy <- cy %>%
 # https://correlatesofwar.org/data-sets/IGOs/
 # https://correlatesofwar.org/wp-content/uploads/IGO-Codebook_v3_short-copy.pdf
 
-# Maybe sifft through the list and filter more relavnt IGOs?
+# Maybe sifft through the list and filter more relevant IGOs?
 
 igom <- state_year_format3 %>% 
   filter(year >= 1985) %>% 
   select(ccode, year, state,
-         eu, eec, nato, oecd, opec, osce, au, wto, who, mercosur, sco, asean, csto) %>%
+         eu, eec, efta, oecd, au, wto, opec, mercosur, asean, nafta, nato, osce, sco, csto, wpact) %>%
   mutate(across(4:ncol(.), function(x){ifelse(x==1, 1, 0)})) %>% # Mutate IO membership so as to capture full membership only
   rename_with(~ paste0(., "_member"), .cols = 4:ncol(.)) %>% 
   mutate(eu_member = eu_member + eec_member) %>% # EEC and EU shouldn't overlap
@@ -680,6 +743,32 @@ cy <- cy %>%
 
 
 
+# Geographical distance to the EU ####
+
+distances <- dist_cepii %>% 
+  select(iso_o, iso_d, distcap) %>% 
+  filter(iso_d == "BEL") %>% # Brussels/Belgium as capital of EU and thus 'country of destination'
+  select(-iso_d) %>% 
+  mutate(iso2c = countrycode(iso_o, "iso3c", "iso2c")) %>% 
+  rename(distance_eu = distcap)
+
+distances$iso2c[distances$iso_o == "ANT"] <- "AN"
+distances$iso2c[distances$iso_o == "PAL"] <- "PS"
+distances$iso2c[distances$iso_o == "ROM"] <- "RO"
+distances$iso2c[distances$iso_o == "TMP"] <- "TL"
+distances$iso2c[distances$iso_o == "YUG"] <- "YU"
+distances$iso2c[distances$iso_o == "ZAR"] <- "CD"
+
+distances$iso_o <- NULL
+
+cy <- cy %>% 
+  left_join(distances, by = "iso2c")
+
+cy$distance_eu[cy$iso2c == "KV"] <- 1564.97 # Pristina
+
+
+
 # Export ####
-cy  %>%  write_rds(paste0(data_path, "external_data/CountryYearPanelComplete.rds"))
+cy  %>%  
+  write_rds(paste0(data_path, "external_data/CountryYearPanelComplete.rds"))
 

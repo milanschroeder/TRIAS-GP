@@ -1,20 +1,20 @@
 #########################################################################
 # Project:  TRIAS - Geopolitics
-# Tasks:    Multivariate, cross-sectional analysis of how frequently 
+# Tasks:    Multivariate,c ross-sectional analysis of how frequently 
 #           the Commission speaks about types of countries over time
 # Author:   @ChRauh (27.02.2025)
 #########################################################################
 
 # Packages #####
 library(tidyverse) # Easily Install and Load the 'Tidyverse' CRAN v2.0.0
-library(countrycode) # Convert Country Names and Country Codes CRAN v1.4.0
-library(broom) # Convert Statistical Objects into Tidy Tibbles CRAN v1.0.4
-library(glue) # Interpreted String Literals CRAN v1.6.2
+library(countrycode)
+library(broom)
+library(glue)
 library(grid)
-library(gridExtra) # Miscellaneous Functions for "Grid" Graphics CRAN v2.3
-library(gtable) # Arrange 'Grobs' in Tables CRAN v0.3.6
-library(patchwork) # The Composer of Plots CRAN v1.2.0
-library(ggtext) # Improved Text Rendering Support for 'ggplot2' CRAN v0.1.2
+library(gridExtra)
+library(gtable)
+library(patchwork)
+library(ggtext)
 
 
 # Paths ####
@@ -158,13 +158,14 @@ rm(pl.con, hhi, sum_shares)
 country_factors <- cp %>% select(iso2c, year,
                                  distance_eu,
                                  eu_import_dependency, eu_export_dependency,
+                                 gdp_capita, gdp_worldshare,
+                                 wto_member,
                                  eu.fta,
-                                 gdp_worldshare,
-                                 vdem.libdem,
-                                 nato_member, 
+                                 mercosur_member, asean_member, nafta_member,
+                                 nato_member, osce_member,
+                                 csto_member, sco_member, wpact_member,
                                  milex_total, armed_conflicts) %>% 
-  rename(eu_fta = eu.fta,
-         libdem = vdem.libdem)
+  rename(eu_fta = eu.fta)
 
 country_factors$eu_fta[is.na(country_factors$eu_fta)] <- 0 # Plausible assumption
 
@@ -175,7 +176,7 @@ df <- mentions.ann %>% # Annual share of docs mentioning a specific foreign coun
 
 # Check completeness of explanatory variables
 df$exp_complete <- complete.cases(df[, 4:ncol(df)])
-sum(df$exp_complete) # 4601 of 6441, sigh
+sum(df$exp_complete) # 4666 of 6441, sigh
 
 # NAs by variable
 miss_vars <- colSums(is.na(df[, 4:ncol(df)])) %>% 
@@ -184,7 +185,6 @@ miss_vars <- colSums(is.na(df[, 4:ncol(df)])) %>%
   arrange(desc(nas))
 
 # Milex kills around 1500
-# Vdem 700
 # GDP data around 500
 # Trade dependency another 261
 
@@ -203,23 +203,23 @@ table(reg.df$year) # Available n of country obs per year
 # Estimate salience models ####
 
 # The basic model
-# reg.formula <- paste0("doc_share ~ ",
-#                       paste(names(reg.df[4:ncol(reg.df)]), collapse = " + "))
-# glue(reg.formula)
+reg.formula <- paste0("doc_share ~ ",
+                      paste(names(reg.df[4:ncol(reg.df)]), collapse = " + "))
+glue(reg.formula)
 
 # Average model, full period
-# fit <-
-#   lm(glue(reg.formula),
-#    reg.df)
-# summary(fit)
+fit <-
+  lm(glue(reg.formula),
+   reg.df)
+summary(fit)
 
 # Function to estimate model by year and extract coefficents etc
 
-ann_reg <- function(data, time.min, time.max) {
+ann_reg <- function(data, time) {
   
   # Select data and standardize
   data_std <- data %>% 
-    filter(year >= time.min & year <= time.max) %>% 
+    filter(year == time) %>% 
     mutate(across(-c(iso2c, year), as.numeric)) %>% 
     mutate(across(-c(iso2c, year), scale)) 
 
@@ -241,140 +241,51 @@ ann_reg <- function(data, time.min, time.max) {
   # Extract coeff and cis
   results <- 
     tidy(est, conf.int = TRUE) %>%
-    mutate(period = paste0(time.min, "-", time.max))
+    mutate(year = time)
   
   # Return results
   return(results)
 }
 
 
-# Collect estimates across periods 
-
-periods <- data.frame(time.min = c(1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020),
-                      time.max = c(1989, 1994, 1999, 2004, 2009, 2014, 2019, 2023))
-
+# Collect estimates across years 
 coeff <- data.frame(NULL)
-for (i in 1:nrow(periods)) {
-  current <- ann_reg(reg.df, time.min = periods$time.min[i],time.max = periods$time.max[i])
+for (i in unique(reg.df$year)) {
+  current <- ann_reg(reg.df, i)
   coeff <- rbind(coeff, current)
 }
-
-
-# Collect estimates for full period (one should cluster ses here ...)
-
-data_reg <- reg.df %>% 
-  mutate(across(-c(iso2c, year), as.numeric)) %>% 
-  mutate(across(-c(iso2c, year), scale)) 
-est <- lm(doc_share ~ ., data = data_reg %>%  select(-c(iso2c, year)))
-coeff.full <- 
-  tidy(est, conf.int = TRUE) %>%
-  mutate(period = "Full\nperiod")
-coeff <- rbind(coeff, coeff.full)
-coeff$full <- coeff$period == "Full\nperiod"
 
 # Significant on 95% level?
 coeff$sig <- coeff$p.value < 0.05
 sum(coeff$sig)
 
-# Positively and negatively significant
-coeff <- coeff %>% 
-  mutate(direc = ifelse(sig & estimate < 0,
-                         "neg", 
-                         ifelse(sig & estimate > 0,
-                                       "pos",
-                                "ns")) %>% 
-           factor(levels = c("neg", "ns", "pos")))
-
-
 max(abs(coeff$estimate))
-
-
-# Nicer labels
-coeff$labels <- coeff$term %>% 
-  str_replace("distance_eu", "Distance") %>% 
-  str_replace("libdem", "Liberal\ndemocracy\nindex") %>% 
-  str_replace("eu_export_dependency", "EU's export\ndependency\non country") %>% 
-  str_replace("eu_import_dependency", "EU's import\ndependency\non country") %>% 
-  str_replace("eu_fta", "Free trade\nagreement\nwith the EU") %>% 
-  str_replace("gdp_worldshare", "Global\nGDP\nshare") %>% 
-  str_replace("milex_total", "Military\nspending\n(absolute)") %>% 
-  str_replace("armed_conflicts", "Armed\nconflicts") %>% 
-  str_replace("nato_member", "NATO\nmember") %>% 
-  factor(levels = c("Distance",
-                    "Liberal\ndemocracy\nindex",
-                    "EU's export\ndependency\non country",
-                    "EU's import\ndependency\non country",
-                    "Free trade\nagreement\nwith the EU",
-                    "Global\nGDP\nshare",
-                    "Military\nspending\n(absolute)",
-                    "Armed\nconflicts",
-                    "NATO\nmember"))
 
 # Plot
 
-pl.period <- 
-  ggplot(coeff %>% filter(term != "(Intercept)" & !full), 
-       aes(x = period, y= estimate, ymin = conf.low, ymax=conf.high, color = direc))+
-  geom_hline(yintercept = 0, linetype = "dashed", linewidth = .2) +
-  geom_line(aes(group =1), color = "black", linewidth = .3, linetype = "dotted")+
-  geom_linerange(linewidth = .6)+
-  geom_point(shape = 16, size = 2)+
-  facet_grid(labels ~ .)+
-  # scale_x_continuous(breaks = seq(1985, 2020, 5), expand = c(0.02, 0)) +
-  scale_x_discrete(expand = c(0.1, 0)) +
-  scale_y_continuous(breaks = c(-.5,0,.5), expand = c(0,0)) +
-  scale_color_manual(values = c("darkred", "grey70", "blue"))+
-  coord_cartesian(ylim = c(-1, 1))+
-  labs(title = "By 5-year periods",
-       x = "", y ="")+
+ggplot(coeff %>% filter(term != "(Intercept)"), 
+       aes(x = year, y=estimate, ymin = conf.low, ymax=conf.high, color = sig))+
+  geom_hline(yintercept = 0) +
+  geom_linerange()+
+  geom_point(shape = 16)+
+  facet_grid(term ~ .)+
+  scale_x_continuous(breaks = seq(1985, 2020, 5), expand = c(0.02, 0)) +
+  scale_y_continuous(breaks = c(-1,0,1)) +
+  coord_cartesian(ylim = c(-1.4, 1.4))+
+  # labs(title = "How diversified or concentrated is the Commission's communication about foreign countries?",
+  #      subtitle = "<br>Values show the <span style='color:blue; font-weight:bold;'>Herfindahl-Hirschman-Index across mentions of non-EU states</span> within a year.<br>A value of 1 would mean that the Commission talks about one state only,<br>while 0 would indicate an equal distribution of mentions across foreign countries.<br>",
+  #      x = "", y ="")+
   theme_bw()+
   theme(legend.position = "none",
-        plot.title = element_text(face = "italic", size = 10),
+        plot.title = element_text(face = "bold", size = 14, hjust = .5),
+        plot.subtitle = element_markdown(hjust = .5),
         axis.text = element_text(color = "black"),
-        axis.text.x = element_text(angle = 90, vjust = .5),
-        axis.text.y = element_blank(),
-        axis.ticks.y = element_blank(),
-        strip.text.y = element_text(angle = 0, hjust = 0, face = "bold"),  
-        # strip.background = element_blank(),             
-        strip.placement = "outside",
-        panel.grid.minor = element_blank())
+        strip.text.y = element_text(angle = 0, hjust = 0),   # Rotate text
+        strip.background = element_blank(),               # Remove background for cleaner look
+        strip.placement = "outside")
 
 
-pl.full <- 
-  ggplot(coeff %>% filter(term != "(Intercept)" & full), 
-         aes(x = period, y= estimate, ymin = conf.low, ymax=conf.high, color = direc))+
-  geom_hline(yintercept = 0, linetype = "dashed", linewidth = .2) +
-  geom_linerange(linewidth = .6)+
-  geom_point(shape = 16, size = 2)+
-  facet_grid(labels ~ .)+
-  # scale_x_continuous(breaks = seq(1985, 2020, 5), expand = c(0.02, 0)) +
-  scale_x_discrete(expand = c(0.02, 0)) +
-  scale_y_continuous(breaks = c(-.5,0,.5), expand = c(0,0)) +
-  scale_color_manual(values = c("darkred", "grey70", "blue"))+
-  coord_cartesian(ylim = c(-1, 1))+
-  labs(title = "Average",
-       x = "", y ="Standardized regression coefficients\n(with 95% confidence bands)\n")+
-  theme_bw()+
-  theme(legend.position = "none",
-        plot.title = element_text(face = "italic", size = 10),
-        axis.text = element_text(color = "black"),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        strip.text.y = element_blank(),  
-        strip.background = element_blank(),
-        panel.grid.minor = element_blank())
 
-pl.comb <-
-  pl.full+pl.period +
-  plot_layout(widths = c(1,5))+
-  plot_annotation(title = "Which kind of foreign countries does the Commission speak about?",
-                  subtitle = "<br>How different country characteristics relate to how frequently the Commission<br> mentions these countries in its public communication.<br>Statistically significant estimates (p<.05)<br>marked in <span style='color:blue; font-weight:bold;'>blue (positive)</span> or <span style='color:darkred; font-weight:bold;'>red (negative)</span>.<br>",
-                  caption = "Multivariate linear regression models of the share of Commission documents mentioning a country.",
-                  theme = theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
-                                plot.subtitle = element_markdown(hjust = 0.5)))  
-
-ggsave("./output/multivariate_plots/CountrySalience_Explained.png", pl.comb, 
-       width = 16, height = 20, units = "cm")
 
 # full country year panel
 # Fill shares
@@ -389,6 +300,5 @@ ggsave("./output/multivariate_plots/CountrySalience_Explained.png", pl.comb,
 # MArk significance
 
 # Plot coeff with pointrange over time 
-
 
 
