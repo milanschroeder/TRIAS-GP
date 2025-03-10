@@ -303,3 +303,17 @@ ggsave("./output/multivariate_plots/CountryCoopConfl_Explained.png", pl.comb,
 
 
 
+# What is going on here?
+
+ru22 <- cm.foreign %>% 
+  filter(iso2c == "RU" & year == 2022) %>% 
+  arrange(desc(cc)) %>% 
+  left_join(sent %>% select(sentence_id, text_sent), by = "sentence_id")
+
+# Many wrong attributions
+# Russia should not benefit from European expertise and cooperation
+
+write_rds(ru22, paste0(data_path, "RussiaSentences2022.rds"))
+
+
+
