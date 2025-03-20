@@ -1,0 +1,49 @@
+---
+title: "Preliminary findings"
+author: "Milan Schröder"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Analysis Steps
+
+-   clean data (*00_prep_data_levels.R*)
+
+    -   split sentences (using *quanteda::tokenize_sentence()*) to deal with broken HTML sructure of old Commission Documents
+    -   remove junk
+
+-   extract country mentions (*01_extract_countries.R*)
+
+    -   detect coutries based on capital/major city, country name/ people's name (using *newsmap::data_dictionary_newsmap\_\** (all languages, removed ambigous terms, included variations))
+
+-   extract country co-occurances (*02_extract_comentions.R*)
+
+-   calculate semantic similarities (*03\_\**)
+
+-   merge with external country/year panel (*04_assemble_external_country_year_data.R*)
+
+-   descriptives (*05_DescriptiveAnalyses.R*)
+
+![Concentration of Country References (incl. Russia)](/output/descriptive_plots/ConcentrationOfCountryMentions_OverTime.png)
+
+```{r}
+
+```
+
+-   Analyse shift in explanatory variables
+
+    -   Determinants of country salience (*06_multivariate_country_salienc.R*)
+
+    ```{r}
+
+    ```
+
+    -   Determinants of country framing (*06_multivariate_country_conflictality.R*)
+
+```{r}
+
+```

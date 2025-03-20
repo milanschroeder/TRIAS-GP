@@ -399,3 +399,6 @@ data_sentlevel <-
 write_rds(data_sentlevel, paste0(data_path, "data_sentlevel.rds"))
 
 
+# prepa for CAP codings:
+remaining_CAP <- read_rds(paste0(data_path, "data_paralevel.rds")) %>% filter(is.na(CAP_code)) %>% distinct(text_para, .keep_all = T) %>% select(id = para_id, text = text_para)
+write_csv(remaining_CAP, "../data/remaining_CAP.csv")

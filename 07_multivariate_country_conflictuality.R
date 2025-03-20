@@ -21,9 +21,9 @@ library(ggtext) # Improved Text Rendering Support for 'ggplot2' CRAN v0.1.2
 # Paths ####
 # Needed as big files currently not part of the repo
 
-# data_path <- "~/Nextcloud/Shared/TRIAS Brückenprojekt/Daten/" # MS/WZB
+ data_path <- "~/Nextcloud/Shared/TRIAS Brückenprojekt/Daten/" # MS/WZB
 # data_path <- "C:/Users/rauh/NextCloudSync/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/WZB
-data_path <- "D:/WZB-Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/HP
+#data_path <- "D:/WZB-Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/HP
 # data_path <- "C:/Users/rauh/Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/TP
 
 
@@ -42,7 +42,7 @@ sent <- read_rds(paste0(data_path, "cleaned_data/data_sentlevel.rds")) %>%
 
 # Country mentions - sentence level ####
 cm <- read_rds(paste0(data_path, "CountryMentions/allCMs_sentlevel.rds")) %>% 
-  filter(sentence_id %in% sent$sentence_id) %>% # Filter as above
+ # filter(sentence_id %in% sent$sentence_id) %>% # Filter as above
   mutate(year = str_extract(date, "^[0-9]{4}") %>% as.numeric()) %>% 
   select(c(sentence_id, year, BI:ncol(.))) %>% # Only few meta and indvidual country indicators
   pivot_longer(cols = 3:ncol(.), names_to = "iso2c", values_to = "mentions") %>% # Easier to handle
@@ -65,7 +65,7 @@ cm <- cm %>%
 # Sentence-level language scales 
 sc <- read_rds(paste0(data_path, "cleaned_data/scaling_glove_sentlevel.rds")) %>% 
   filter(sentence_id %in% sent$sentence_id) %>% # Filter as above
-  select(sentence_id, coop_confl) %>% 
+  select(sentence_id, coop_confl, coop) %>% 
   rename(cc = coop_confl) %>% # Focusing on this one for now
   mutate(cc = max(cc, na.rm = T) + min(cc, na.rm = T) - cc) # Get directionality right, more "hostile" language should have higher values (correct downstream)
 
@@ -80,6 +80,12 @@ cm.foreign <- cmsc %>%
   filter(!eu_member) %>% # Filter
   select(-eu_member)  
 
+focused_sents <- cm.foreign %>% 
+  filter(mentions != 0) %>% 
+  group_by(sentence_id) %>% 
+  #group_by(doc_id) %>% # or rather only sents from focused docs?!?
+  filter(n() == 1) %>% 
+  ungroup()
   
 # Coop/confl language by country - full period
 cc.full <- cm.foreign %>% 
@@ -90,7 +96,8 @@ cc.full <- cm.foreign %>%
 
 # Coop/confl language by country and year
 cc.ann <- cm.foreign %>% 
-  group_by(iso2c, year) %>% 
+#   filter(sentence_id %in% focused_sents$sentence_id) %>%
+   group_by(iso2c, year) %>% 
   summarise(cc = mean(cc, na.rm = T)) %>% 
   ungroup()
 
@@ -131,6 +138,7 @@ miss_vars <- colSums(is.na(df[, 4:ncol(df)])) %>%
 
 # Data available for modelling
 reg.df <- df %>% 
+  filter(!iso2c %in% c("RU", "UA")) %>% 
   filter(exp_complete) %>% 
   select(-exp_complete)
 

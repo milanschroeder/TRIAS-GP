@@ -18,10 +18,10 @@ library(GGally)
 # Paths ####
 # Needed as big files currently not part of the repo
 
-# data_path <- "~/Nextcloud/Shared/TRIAS Brückenprojekt/Daten/" # MS/WZB
+ data_path <- "~/Nextcloud/Shared/TRIAS Brückenprojekt/Daten/" # MS/WZB
 # data_path <- "C:/Users/rauh/NextCloudSync/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/WZB
 # data_path <- "D:/WZB-Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/HP
-data_path <- "C:/Users/rauh/Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/TP
+#data_path <- "C:/Users/rauh/Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/TP
 
 
 
@@ -49,7 +49,7 @@ for (i in 2:length(simil_files)) {
 
 # Clean up
 simils <- simils %>% 
-  select(-c(coop, conf, friend, foe, friendly, hostile)) %>% # Drop ind poles of the scales
+#  select(-c(coop, conf, friend, foe, friendly, hostile)) %>% # Drop ind poles of the scales
   rename(digi_adv = digitalityadvanced,
          digi_sim = digitalitysimple)
 rm(current, varname, i, simil_files)
@@ -94,9 +94,12 @@ rm(tokens_sents, sent_weigths)
 gc()
 
 
+
+
+
 # Tokenize paragraphs ####
 # ~ XXX mins on HP
-
+start <- Sys.time()
 tokens_para <- 
     read_rds(paste0(data_path, "cleaned_data/data_paralevel.rds")) %>% select(text = text_para, para_id) %>% 
       mutate(text = str_remove_all(text, "\'|’|#|\\.|[0-9]"), # choose to just remove . as u.s. much more relvant than www.ec.europa.eu
@@ -109,7 +112,7 @@ tokens_para <-
       filter(!(token %in% quanteda::stopwords("en"))) %>% # Exclude en stopwords
       filter(str_detect(token, "[a-z]")) %>% # Only tokens with letters in them
       filter(nchar(token) > 1) 
-
+Sys.time()-start
 
 # Merge token level data with weights and aggregate to paragraph level ####
 # ~ 57 mins on TP
