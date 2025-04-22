@@ -19,9 +19,9 @@ library(ggtext)
 # Paths ####
 # Needed as big files currently not part of the repo
 
-# data_path <- "~/Nextcloud/Shared/TRIAS Brückenprojekt/Daten/" # MS/WZB
+ data_path <- "~/Nextcloud/Shared/TRIAS Brückenprojekt/Daten/" # MS/WZB
 # data_path <- "C:/Users/rauh/NextCloudSync/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/WZB
-data_path <- "D:/WZB-Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/HP
+# data_path <- "D:/WZB-Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/HP
 # data_path <- "C:/Users/rauh/Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/TP
 
 
@@ -33,11 +33,11 @@ glove <- read_rds(paste0(data_path, "cleaned_data/scaling_glove_sentlevel.rds"))
   mutate(gti = max(gti, na.rm = T) + min(gti, na.rm = T) - gti, # Get directionality right, more "hostile" language should have higher values (correct downstream)
          coop_confl = max(coop_confl, na.rm = T) + min(coop_confl, na.rm = T) - coop_confl,
          friend_foe = max(friend_foe, na.rm = T) + min(friend_foe, na.rm = T) - friend_foe) %>% 
-  rename_with(~ paste0(., "_glove"), .cols = 2:9)
+  rename_with(~ paste0(., "_glove"), .cols = 2:last_col())
 
 lsx <- read_rds(paste0(data_path, "cleaned_data/scaling_lsx_sentlevel.rds")) %>% 
   select(-doc_id) %>% 
-  rename_with(~ paste0(., "_lsx"), .cols = 2:9)
+  rename_with(~ paste0(., "_lsx"), .cols = 2:last_col())
 
 # Sentence data
 sent <- read_rds(paste0(data_path, "cleaned_data/data_sentlevel.rds")) %>% 
@@ -286,7 +286,7 @@ pl <- (pl.all+pl.lower)+
                   subtitle = "Each dot represents one sentence in which a non-EU state is mentioned.<br>Y-axis and color indicate whether this sentence uses <span style='color:blue; font-weight:bold;'>cooperative</span>, <span style='color:grey50; font-weight:bold;'>neutral</span>, or <span style='color:red; font-weight:bold;'>conflictual</span> language.",
                   caption = "Based on all country insights, daily news, press releases, read-outs, statements, and Commissioner speeches the Commission has published 1985-2023.",
                   theme = theme(plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
-                        plot.subtitle = element_markdown(hjust = 0.5)))  
+                                plot.subtitle = element_markdown(hjust = 0.5)))  
 
 
 # ggsave("./output/descriptive_plots/CoopConflictCountries_OverTime.png", pl, height = 32, width = 24, units = "cm")
@@ -323,7 +323,7 @@ df85_89 <- cm %>%
             mentions85_89 = n()) %>% 
   ungroup() %>% 
   mutate(mentions_sc85_89 = scales::rescale(mentions85_89, to = c(0, 1)))
-  # mutate(mentions_sc85_89 = scale(mentions85_89)[,1]) # Centers and standardizes mentions
+# mutate(mentions_sc85_89 = scale(mentions85_89)[,1]) # Centers and standardizes mentions
 
 df90_00 <- cm %>% 
   filter(year >= 1990 & year <= 2000) %>% 
@@ -332,7 +332,7 @@ df90_00 <- cm %>%
             mentions90_00 = n()) %>% 
   ungroup() %>% 
   mutate(mentions_sc90_00 = scales::rescale(mentions90_00, to = c(0, 1)))
-  # mutate(mentions_sc90_00 = scale(mentions90_00)[,1]) # Centers and standardizes mentions
+# mutate(mentions_sc90_00 = scale(mentions90_00)[,1]) # Centers and standardizes mentions
 
 df01_10 <- cm %>% 
   filter(year >= 2001 & year <= 2010) %>% 
@@ -341,7 +341,7 @@ df01_10 <- cm %>%
             mentions01_10 = n()) %>% 
   ungroup() %>% 
   mutate(mentions_sc01_10 = scales::rescale(mentions01_10, to = c(0, 1)))
-  # mutate(mentions_sc01_10 = scale(mentions01_10)[,1]) # Centers and standardizes mentions
+# mutate(mentions_sc01_10 = scale(mentions01_10)[,1]) # Centers and standardizes mentions
 
 df11_23 <- cm %>% 
   filter(year >= 2011 & year <= 2023) %>% 
@@ -350,7 +350,7 @@ df11_23 <- cm %>%
             mentions11_23 = n()) %>% 
   ungroup() %>% 
   mutate(mentions_sc11_23 = scales::rescale(mentions11_23, to = c(0, 1)))
-  # mutate(mentions_sc11_23 = scale(mentions11_23)[,1]) # Centers and standardizes mentions
+# mutate(mentions_sc11_23 = scale(mentions11_23)[,1]) # Centers and standardizes mentions
 
 dfall <- cm %>% 
   group_by(iso2c) %>% 
@@ -358,7 +358,7 @@ dfall <- cm %>%
             mentionsall = n()) %>% 
   ungroup() %>% 
   mutate(mentions_scall = scales::rescale(mentionsall, to = c(0, 1)))
-  #mutate(mentions_scall = scale(mentionsall)[,1]) # Centers and standardizes mentions
+#mutate(mentions_scall = scale(mentionsall)[,1]) # Centers and standardizes mentions
 
 
 # Merge to world data
@@ -385,7 +385,7 @@ pl.all <-
                        midpoint = mean(dfall$ccall, na.rm = T), 
                        limits = c(mean(dfall$ccall, na.rm = T)-2*sd(dfall$ccall, na.rm = T),
                                   mean(dfall$ccall, na.rm = T)+2*sd(dfall$ccall, na.rm = T)),
-                         oob=scales::squish)+
+                       oob=scales::squish)+
   labs(title = "Full period (1985-2023)",
        fill = "Cooperative/conflictual language around country mentions: \n ",
        alpha = "Normalized frequency of country mentions:",
@@ -506,11 +506,11 @@ pl.11_23 <-
 # Combined plot
 pl.comb <- 
   pl.all+((pl.85_89+pl.90_00)/(pl.01_10+pl.11_23))+
-    plot_annotation(title = "How the European Commission publicly communicates about foreign countries",
-                    subtitle = "Color indicates whether sentences mentioning the country on average use <span style='color:blue; font-weight:bold;'>cooperative</span>, <span style='color:grey50; font-weight:bold;'>neutral</span>, or <span style='color:red; font-weight:bold;'>conflictual</span> language.<br>Transparency indicates the normalized frequency by which the Commission has meantioned the country.<br>",
-                    caption = "\nBased on all country insights, daily news, press releases, read-outs, statements, and Commissioner speeches the Commission has published 1985-2023.\nCountries appearing fully white/invisible are either EU member states or not mentioned in the respective period.",
-                    theme = theme(plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
-                                  plot.subtitle = element_markdown(hjust = 0.5))) +  
+  plot_annotation(title = "How the European Commission publicly communicates about foreign countries",
+                  subtitle = "Color indicates whether sentences mentioning the country on average use <span style='color:blue; font-weight:bold;'>cooperative</span>, <span style='color:grey50; font-weight:bold;'>neutral</span>, or <span style='color:red; font-weight:bold;'>conflictual</span> language.<br>Transparency indicates the normalized frequency by which the Commission has meantioned the country.<br>",
+                  caption = "\nBased on all country insights, daily news, press releases, read-outs, statements, and Commissioner speeches the Commission has published 1985-2023.\nCountries appearing fully white/invisible are either EU member states or not mentioned in the respective period.",
+                  theme = theme(plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+                                plot.subtitle = element_markdown(hjust = 0.5))) +  
   plot_layout(guides = "collect") & 
   theme(legend.position = "bottom",
         legend.box = "vertical") 
@@ -523,110 +523,6 @@ ggsave("./output/descriptive_plots/CoopConflictCountries_Maps_OverTime.png", pl.
 
 
 # Analyse salience of countries ####
-
-
-# Analyse foreign country references over CAP classifications ####
-cm_para_long <- read_rds(paste0(data_path, "CountryMentions/allCMs_paralevel.rds")) %>% 
-  left_join(., read_rds(paste0(data_path, "cleaned_data/data_doclevel.rds")) %>% select(doc_key, date), join_by(doc_key)) %>% 
-  mutate(year = year(date),
-         cm_total = rowSums(select(., BI:WS))) %>% 
-  select(where(~n_distinct(.)>1)) %>% 
-  filter(cm_total > 0) %>% 
-  pivot_longer(BI:WS, names_to = "iso2c", values_to = "mentions") %>% 
-  filter(mentions > 0) %>% 
-  left_join(., countries, join_by(iso2c, year)) %>% 
-  select(text_id, doc_id, date, CAP_code, CAP_name,  EU_expl:eu_member)
-
-write_rds(cm_para_long, "../data/CMs_paralevel_long_minimal.rds")
-
-cm_external <- cm_para_long %>% 
-  filter(eu_member == F | is.na(eu_member)) %>% 
-  group_by(text_id) %>% 
-  summarize(cm_external = sum(mentions),
-            cm_external_any = cm_external > 0
-    ) %>% 
-  ungroup()
-
-cm_internal <- cm_para_long %>% 
-  filter(eu_member == T) %>% 
-  group_by(text_id) %>% 
-  summarize(cm_internal = sum(mentions),
-            cm_internal_any = cm_internal > 0
-  ) %>% 
-  ungroup()
-
-# join cm + cm_in/external
-cm_para <- read_rds(paste0(data_path, "CountryMentions/allCMs_paralevel.rds")) %>% 
-  left_join(., read_rds(paste0(data_path, "cleaned_data/data_doclevel.rds")) %>% select(doc_key, date), join_by(doc_key)) %>%
-  select(text_id, doc_id, date, CAP_code, CAP_name,  EU_expl:last_col()) %>% 
-  left_join(., cm_internal, join_by(text_id)) %>% 
-  left_join(., cm_external, join_by(text_id)) %>% 
-  mutate(across(cm_internal:cm_external_any, ~ifelse(is.na(.x), 0, .x)),
-         across(c(cm_external_any, cm_internal_any), ~as.logical(.x)))
-
-# immediate context: para-level ####
-para_plot_data <- 
-  cm_para %>% 
-  mutate(year = year(date),
-         across(c(cm_external_any, cm_internal_any), ~as.numeric(.x))) %>% 
-  group_by(year) %>% 
-  mutate(N_total = n()) %>% 
-  group_by(year, CAP_name) %>% 
-  summarise(across(where(is.numeric), mean, na.rm=T),
-            N = n()) %>%
-  ungroup() %>% 
-  mutate(yearly_share = N / N_total)
-#filter(year < 2024)
-
-para_plot_data %>%
-  ggplot(aes(x = year, size = yearly_share#, alpha = N
-             )) +
-  #geom_raster(aes(fill = cm_external_any, y = fct_reorder(CAP_name, 1-cm_external_any))) + # plot whether any non-EU country is mentioned
-  geom_point(aes(colour = cm_external_any, y = fct_reorder(CAP_name, 1-cm_external_any))) + # plot whether any non-EU country is mentioned
-  #geom_raster(aes(fill = cm_external, y = fct_reorder(CAP_name, 1-cm_external))) + # plot avg non-EU country mentions
-  #geom_raster(aes(fill = cm_BRICS, y = fct_reorder(CAP_name, 1-cm_BRICS))) + # plot avg mention of any BRICS country
-  #geom_raster(aes(fill = CN, y = fct_reorder(CAP_name, 1-CN))) + # plot avg China mentions
-  #geom_raster(aes(fill = US, y = fct_reorder(CAP_name, 1-US))) + # plot avg US mentions
-  viridis::scale_fill_viridis(direction = -1) +
-  viridis::scale_colour_viridis(direction = -1) +
-  theme_minimal() + 
-  labs(x = "", y= "", subtitle = "Share of paragraphs mentioning any foreign country by CAP classification", fill = "foreign country share", colour = "foreign country share", size = "CAP share p.a.")
-
-ggsave("./output/descriptive_plots/ForeignCountry_CAP_OverTime.png", width = 26, height = 16, units = "cm")
-
-
-# BRICS: basically trade only! (except maybe covid, slightly decreasing since ~2010)
-# CN: same (but some interesting nuance to check)
-# US almost everywhere (interesting: different trade peaks, defense around Irak/Afghanistan, energy peaking with climate movement, civil rights: slow increase after snowden, peak 2015/2016, social/labor only in new labour era)
-
-
-# paragraph level descriptives ####
-
-# para types over time:
-paras <- read_rds(paste0(data_path, "cleaned_data/data_paralevel.rds"))
-
-paras %>% 
-  mutate(year = year(date),
-         para_type = ifelse(is.na(para_type), "paragraph", para_type)) %>% 
-  ggplot(aes(x = year)) +
-  geom_bar(aes(fill = para_type)) +
-  theme_minimal() +
-  labs(x = "", y = "", title = "Paragraph types used by European Commission, 1985-2024", fill = "")
-
-paras %>% 
-  mutate(year = year(date),
-         para_type = ifelse(is.na(para_type), "paragraph", para_type)) %>% 
-  group_by(para_type, year) %>% 
-  summarise(N = n(),
-            length = mean(n_chars_para, na.rm = T)) %>% 
-  ungroup() %>% 
-  ggplot(aes(x = year, y = length, colour = para_type)) +
-  geom_point(aes(size = N)) +
-  geom_line() +
- # coord_cartesian(ylim = c(0, 1000))+
-  theme_minimal() +
-  labs(x = "", y = "", title = "Paragraph length in European Commission Communication, 1985-2024", fill = "")
-
 
 
 # Document level data ####
@@ -644,8 +540,6 @@ docs <- read_rds(paste0(data_path, "cleaned_data/data_doclevel.rds")) %>%
 
 # Data descriptives
 
-
-# docs ver time
 doc_types <- docs %>% 
   group_by(doc_type) %>% 
   summarise(count = n()) %>% 
@@ -692,7 +586,8 @@ cm <- read_rds(paste0(data_path, "CountryMentions/allCMs_doclevel.rds")) %>%
   filter(doc_id %in% docs$doc_id) %>% # Filter as above
   mutate(year = str_extract(date, "^[0-9]{4}") %>% as.numeric()) %>% 
   select(c(doc_id, year, BI:ncol(.))) %>% # Only few meta and indvidual country indicators
-  pivot_longer(cols = 3:ncol(.), names_to = "iso2c", values_to = "mentions") # Easier to handle
+  pivot_longer(cols = 3:ncol(.), names_to = "iso2c", values_to = "mentions") %>%  # Easier to handle
+  left_join(., countrycode::codelist %>% select(iso2c, continent), join_by(iso2c))
 
 
 # External country/year panel ####
@@ -722,162 +617,301 @@ cm.foreign <- cm %>%
 # Share of docs with country
 shares <-
   cm.foreign %>% 
+  left_join(., countrycode::codelist %>% select(iso2c, region), join_by(iso2c)) %>% 
   mutate(us = (iso2c == "US" & mentions > 0), # Single out US + BRICS
          br = (iso2c == "BR" & mentions > 0),
          ru = (iso2c == "RU" & mentions > 0),
+         ua = (iso2c == "UA" & mentions > 0),
          `in` = (iso2c == "IN" & mentions > 0),
          cn = (iso2c == "CN" & mentions > 0),
-         za = (iso2c == "ZA" & mentions > 0)) %>% 
+         za = (iso2c == "ZA" & mentions > 0),
+         asia = (continent == "Asia" & mentions > 0),
+         europe = (continent == "Europe" & mentions > 0),
+         africa = (continent == "Africa" & mentions > 0),
+         oceania = (continent == "Oceania" & mentions > 0),
+         samerica = (region == "Latin America & Caribbean" & mentions > 0),
+         namerica = (region == "North America" & mentions > 0),
+         others = (!iso2c %in% c("ZA", "CN", "IN", "UA", "RU", "BR", "US") & mentions > 0),
+         war = ((iso2c == "UA" | iso2c == "RU") & mentions > 0)
+         ) %>% 
   group_by(doc_id, year) %>% 
-  summarise(mentions = sum(mentions),
-            us = sum(us),
-            br = sum(br),
-            ru = sum(ru),
-            `in` = sum(`in`),
-            cn = sum(cn),
-            za = sum(za)) %>% 
+  summarise(across(where(is.logical), sum, na.rm = T),
+    fc = sum(mentions)
+    #         us = sum(us),
+    #         br = sum(br),
+    #         ru = sum(ru),
+    #         ua = sum(ua)
+    #         `in` = sum(`in`),
+    #         cn = sum(cn),
+    #         za = sum(za)
+    ) %>% 
   ungroup() %>% 
+  select(-doc_id) %>% 
   group_by(year) %>% 
-  summarise(fc = mean(as.logical(mentions)), # Annual shares
-            us = mean(as.logical(us)),
-            br = mean(as.logical(br)),
-            ru = mean(as.logical(ru)),
-            `in` = mean(as.logical(`in`)),
-            cn = mean(as.logical(cn)),
-            za = mean(as.logical(za))) %>% 
-  ungroup()
+  summarise(across(where(is.numeric), ~mean(as.logical(.x), na.rm = T))
+  # fc = mean(as.logical(mentions)), # Annual shares
+  #           us = mean(as.logical(us)),
+  #           br = mean(as.logical(br)),
+  #           ru = mean(as.logical(ru)),
+  #           ua = mean(as.logical(ua)),
+  #           `in` = mean(as.logical(`in`)),
+  #           cn = mean(as.logical(cn)),
+  #           za = mean(as.logical(za))
+  ) %>% 
+  ungroup() 
 
+plot_data = shares
 
 # Individual plots
 
+plot_theme <- theme_bw() +
+  theme(
+    legend.position = "none",
+    plot.title = element_markdown(size = 10, hjust = 0.5),
+    axis.text = element_text(color = "black"),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
+
 pl.all <- 
-  ggplot(shares, aes(x = year, y = fc)) +
-  geom_segment(aes(x = year, xend = year, y = 0, yend = fc), color = "blue", linewidth = 1) +  # Line from 0 to point
-  geom_point(size = 4, color = "blue") +  # Circular point
+  ggplot(plot_data, aes(x = year)) +
+  geom_segment(aes(x = year, xend = year, y = 0, yend = fc), color = "lightblue", linewidth = 1) +
+  geom_point(size = 4, color = "lightblue", aes(y = fc)) +
+  geom_segment(aes(x = year, xend = year, y = 0, yend = others), color = "blue", linewidth = 1) +
+  geom_point(size = 4, color = "blue", aes(y = others)) +
   scale_x_continuous(breaks = seq(1985, 2020, 5), expand = c(0.02, 0)) +
-  scale_y_continuous(labels = scales::percent_format(), expand = c(0.0, 0))+
+  scale_y_continuous(labels = scales::percent_format(), expand = c(0.0, 0)) +
   coord_cartesian(ylim = c(0, 1)) +
-  labs(title = "All foreign countries", x = "Years", y = "")+
-  theme_bw() +
-  theme(legend.position = "none",
-        plot.title = element_text(face = "bold", size = 10, hjust = .5),
-        axis.text = element_text(color = "black"),
-        panel.grid.major.x = element_blank(),
-        panel.grid.minor.x = element_blank())
+  labs(title = "<span style='color:blue; font-weight:bold;'>Other countries</span> / <span style='color:lightblue; font-weight:bold;'>All foreign countries</span>", x = "", y = "") +
+  plot_theme
 
 pl.us <- 
-  ggplot(shares, aes(x = year, y = us)) +
-  geom_segment(aes(x = year, xend = year, y = 0, yend = us), color = "blue", linewidth = .5) +  # Line from 0 to point
-  geom_point(size = 1, color = "blue") +  
-  geom_point(aes(y = fc), size = 1, color = "grey", alpha = .5) +  
+  ggplot(plot_data, aes(x = year, y = us)) +
+  geom_segment(aes(x = year, xend = year, y = 0, yend = namerica), color = "lightblue", linewidth = 1) +
+  geom_point(size = 1, color = "lightblue", aes(y = namerica)) +
+  geom_segment(aes(x = year, xend = year, y = 0, yend = us), color = "blue", linewidth = .5) +
+  geom_point(size = 1, color = "blue") +
+  geom_point(aes(y = fc), size = 1, color = "grey", alpha = .5) +
   scale_x_continuous(breaks = seq(1985, 2020, 5), expand = c(0.02, 0)) +
-  scale_y_continuous(labels = scales::percent_format(), expand = c(0.0, 0))+
+  scale_y_continuous(labels = scales::percent_format(), expand = c(0.0, 0)) +
   coord_cartesian(ylim = c(0, 1)) +
-  labs(title = "United States", x = "", y = "")+
-  theme_bw() +
-  theme(legend.position = "none",
-        plot.title = element_text(face = "bold", size = 10, hjust = .5),
-        axis.text = element_text(color = "black"),
-        panel.grid.major.x = element_blank(),
-        panel.grid.minor.x = element_blank())
+  labs(title = "<span style='color:blue; font-weight:bold;'>US</span> / <span style='color:lightblue; font-weight:bold;'>North America</span>", x = "", y = "") +
+  plot_theme
 
 pl.br <- 
-  ggplot(shares, aes(x = year, y = br)) +
-  geom_segment(aes(x = year, xend = year, y = 0, yend = br), color = "blue", linewidth = .5) +  # Line from 0 to point
-  geom_point(size = 1, color = "blue") +  
-  geom_point(aes(y = fc), size = 1, color = "grey", alpha = .5) + 
+  ggplot(plot_data, aes(x = year, y = br)) +
+  geom_segment(aes(x = year, xend = year, y = 0, yend = samerica), color = "lightblue", linewidth = 1) +
+  geom_point(size = 1, color = "lightblue", aes(y = samerica)) +
+  geom_segment(aes(x = year, xend = year, y = 0, yend = br), color = "blue", linewidth = .5) +
+  geom_point(size = 1, color = "blue") +
+  geom_point(aes(y = fc), size = 1, color = "grey", alpha = .5) +
   scale_x_continuous(breaks = seq(1985, 2020, 5), expand = c(0.02, 0)) +
-  scale_y_continuous(labels = scales::percent_format(), expand = c(0.0, 0))+
+  scale_y_continuous(labels = scales::percent_format(), expand = c(0.0, 0)) +
   coord_cartesian(ylim = c(0, 1)) +
-  labs(title = "Brazil", x = "", y = "")+
-  theme_bw() +
-  theme(legend.position = "none",
-        plot.title = element_text(face = "bold", size = 10, hjust = .5),
-        axis.text = element_text(color = "black"),
-        panel.grid.major.x = element_blank(),
-        panel.grid.minor.x = element_blank())
+  labs(title = "<span style='color:blue; font-weight:bold;'>Brazil</span> / <span style='color:lightblue; font-weight:bold;'>South America</span>", x = "", y = "") +
+  plot_theme
 
 pl.ru <- 
-  ggplot(shares, aes(x = year, y = ru)) +
-  geom_segment(aes(x = year, xend = year, y = 0, yend = ru), color = "blue", linewidth = .5) +  # Line from 0 to point
-  geom_point(size = 1, color = "blue") +  
-  geom_point(aes(y = fc), size = 1, color = "grey", alpha = .5) + 
+  ggplot(plot_data, aes(x = year, y = ru)) +
+  geom_segment(aes(x = year, xend = year, y = 0, yend = war), color = "lightblue", linewidth = 1) +
+  geom_point(size = 1, color = "lightblue", aes(x = year, y = war)) +
+  geom_segment(aes(x = year+.2, xend = year+.2, y = 0, yend = ua), color = "yellow", linewidth = 1) +
+  geom_point(size = 1, color = "yellow", aes(x = year+.2, y = ua)) +
+  geom_segment(aes(x = year-.2, xend = year-.2, y = 0, yend = ru), color = "blue", linewidth = .5) +
+  geom_point(size = 1, color = "blue", aes(x = year-.2)) +
+  geom_point(aes(y = fc), size = 1, color = "grey", alpha = .5) +
   scale_x_continuous(breaks = seq(1985, 2020, 5), expand = c(0.02, 0)) +
-  scale_y_continuous(labels = scales::percent_format(), expand = c(0.0, 0))+
+  scale_y_continuous(labels = scales::percent_format(), expand = c(0.0, 0)) +
   coord_cartesian(ylim = c(0, 1)) +
-  labs(title = "Russia", x = "", y = "")+
-  theme_bw() +
-  theme(legend.position = "none",
-        plot.title = element_text(face = "bold", size = 10, hjust = .5),
-        axis.text = element_text(color = "black"),
-        panel.grid.major.x = element_blank(),
-        panel.grid.minor.x = element_blank())
-
+  labs(title = "<span style='color:blue; font-weight:bold;'>Russia</span> <span style='color:lightblue; font-weight:bold;'>or</span> <span style='color:yellow; font-weight:bold;'>Ukraine</span>", x = "", y = "") +
+  plot_theme
 
 pl.ind <- 
-  ggplot(shares, aes(x = year, y = `in`)) +
-  geom_segment(aes(x = year, xend = year, y = 0, yend = `in`), color = "blue", linewidth = .5) +  # Line from 0 to point
-  geom_point(size = 1, color = "blue") +  
-  geom_point(aes(y = fc), size = 1, color = "grey", alpha = .5) + 
+  ggplot(plot_data, aes(x = year, y = `in`)) +
+  geom_segment(aes(x = year-.1, xend = year-.1, y = 0, yend = oceania), color = "lightblue", linewidth = 1) +
+  geom_point(size = 1, color = "lightblue", aes(x = year-.1, y = oceania)) +
+  geom_segment(aes(x = year+.1, xend = year+.1, y = 0, yend = `in`), color = "blue", linewidth = .5) +
+  geom_point(size = 1, color = "blue", aes(x = year+.1)) +
+  geom_point(aes(y = fc), size = 1, color = "grey", alpha = .5) +
   scale_x_continuous(breaks = seq(1985, 2020, 5), expand = c(0.02, 0)) +
-  scale_y_continuous(labels = scales::percent_format(), expand = c(0.0, 0))+
+  scale_y_continuous(labels = scales::percent_format(), expand = c(0.0, 0)) +
   coord_cartesian(ylim = c(0, 1)) +
-  labs(title = "India", x = "", y = "")+
-  theme_bw() +
-  theme(legend.position = "none",
-        plot.title = element_text(face = "bold", size = 10, hjust = .5),
-        axis.text = element_text(color = "black"),
-        panel.grid.major.x = element_blank(),
-        panel.grid.minor.x = element_blank())
+  labs(title = "<span style='color:blue; font-weight:bold;'>India</span> / <span style='color:lightblue; font-weight:bold;'>Oceania</span>", x = "", y = "") +
+  plot_theme
 
 pl.cn <- 
-  ggplot(shares, aes(x = year, y = cn)) +
-  geom_segment(aes(x = year, xend = year, y = 0, yend = cn), color = "blue", linewidth = .5) +  # Line from 0 to point
-  geom_point(size = 1, color = "blue") +  
-  geom_point(aes(y = fc), size = 1, color = "grey", alpha = .5) + 
+  ggplot(plot_data, aes(x = year, y = cn)) +
+  geom_segment(aes(x = year, xend = year, y = 0, yend = asia), color = "lightblue", linewidth = 1) +
+  geom_point(size = 1, color = "lightblue", aes(y = asia)) +
+  geom_segment(aes(x = year, xend = year, y = 0, yend = cn), color = "blue", linewidth = .5) +
+  geom_point(size = 1, color = "blue" ) +
+  geom_point(aes(y = fc), size = 1, color = "grey", alpha = .5) +
   scale_x_continuous(breaks = seq(1985, 2020, 5), expand = c(0.02, 0)) +
-  scale_y_continuous(labels = scales::percent_format(), expand = c(0.0, 0))+
+  scale_y_continuous(labels = scales::percent_format(), expand = c(0.0, 0)) +
   coord_cartesian(ylim = c(0, 1)) +
-  labs(title = "China", x = "", y = "")+
-  theme_bw() +
-  theme(legend.position = "none",
-        plot.title = element_text(face = "bold", size = 10, hjust = .5),
-        axis.text = element_text(color = "black"),
-        panel.grid.major.x = element_blank(),
-        panel.grid.minor.x = element_blank())
+  labs(title = "<span style='color:blue; font-weight:bold;'>China</span> / <span style='color:lightblue; font-weight:bold;'>Asia</span>", x = "", y = "") +
+  plot_theme
 
 pl.za <- 
-  ggplot(shares, aes(x = year, y = za)) +
-  geom_segment(aes(x = year, xend = year, y = 0, yend = za), color = "blue", linewidth = .5) +  # Line from 0 to point
-  geom_point(size = 1, color = "blue") +  
-  geom_point(aes(y = fc), size = 1, color = "grey", alpha = .5) + 
+  ggplot(plot_data, aes(x = year, y = za)) +
+  geom_segment(aes(x = year, xend = year, y = 0, yend = africa), color = "lightblue", linewidth = 1) +
+  geom_point(size = 1, color = "lightblue", aes(y = africa)) +
+  geom_segment(aes(x = year, xend = year, y = 0, yend = za), color = "blue", linewidth = .5) +
+  geom_point(size = 1, color = "blue" ) +
+  geom_point(aes(y = fc), size = 1, color = "grey", alpha = .5) +
   scale_x_continuous(breaks = seq(1985, 2020, 5), expand = c(0.02, 0)) +
-  scale_y_continuous(labels = scales::percent_format(), expand = c(0.0, 0))+
+  scale_y_continuous(labels = scales::percent_format(), expand = c(0.0, 0)) +
   coord_cartesian(ylim = c(0, 1)) +
-  labs(title = "South Africa", x = "", y = "")+
-  theme_bw() +
-  theme(legend.position = "none",
-        plot.title = element_text(face = "bold", size = 10, hjust = .5),
-        axis.text = element_text(color = "black"),
-        panel.grid.major.x = element_blank(),
-        panel.grid.minor.x = element_blank())
+  labs(title = "<span style='color:blue; font-weight:bold;'>South Africa</span> / <span style='color:lightblue; font-weight:bold;'>Africa</span>", x = "", y = "") +
+  plot_theme
 
-# Lower panel - US + brics
-pl.lower <- (pl.us+pl.br)/(pl.ru+pl.ind)/(pl.cn+pl.za)
-
+# Lower panel - US + BRICS
+pl.lower <- (pl.us + pl.br) / (pl.ru + pl.ind) / (pl.cn + pl.za)
 
 # Combined plot
-pl <- (pl.all+pl.lower)+
-  # plot_layout(heights = c(.7,1))+
-  plot_annotation(title = "How often the European Commission publicly communicates about foreign countries",
-                  subtitle = "Share of public communication documents mentioning non-EU states\n",
-                  caption = "Based on all country insights, daily news, press releases, read-outs, statements, and Commissioner speeches the Commission has published 1985-2023.",
-                  theme = theme(plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
-                                plot.subtitle = element_text(hjust = 0.5, color = "blue", face = "bold")))  
+pl <- (pl.all + pl.lower) +
+  plot_annotation(
+    title = "How often the European Commission publicly communicates about foreign countries",
+    subtitle = "Share of public communication documents mentioning non-EU states\n",
+    caption = "Based on all country insights, daily news, press releases, read-outs, statements, and Commissioner speeches the Commission has published 1985-2023.",
+    theme = theme(plot.title = element_markdown(size = 16, face = "bold", hjust = 0.5),
+                  plot.subtitle = element_text(hjust = 0.5, face = "bold"))
+  )
 
-ggsave("./output/descriptive_plots/ForeignCountrySalience_OverTime.png", pl, height = 20, width = 36, units = "cm")
+pl
 
-# Clean up
+ggsave("./output/descriptive_plots/ForeignCountryRegionSalience_OverTime.png", pl, height = 20, width = 36, units = "cm")
+
+# plot relative to all fc ####
+shares_relative <- 
+  shares %>% 
+  mutate(
+    across(us:war, ~.x / fc)
+  )
+
+plot_data = shares_relative
+
+# Individual plots
+
+plot_theme <- theme_bw() +
+  theme(
+    legend.position = "none",
+    plot.title = element_markdown(size = 10, hjust = 0.5),
+    axis.text = element_text(color = "black"),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
+
+pl.all <- 
+  ggplot(plot_data, aes(x = year)) +
+  # geom_segment(aes(x = year, xend = year, y = 0, yend = fc), color = "lightblue", linewidth = 1) +
+  # geom_point(size = 4, color = "lightblue", aes(y = fc)) +
+  geom_segment(aes(x = year, xend = year, y = 0, yend = others), color = "blue", linewidth = 1) +
+  geom_point(size = 4, color = "blue", aes(y = others)) +
+  scale_x_continuous(breaks = seq(1985, 2020, 5), expand = c(0.02, 0)) +
+  scale_y_continuous(labels = scales::percent_format(), expand = c(0.0, 0)) +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(title = "<span style='color:blue; font-weight:bold;'>All other countries</span>", x = "", y = "") +
+  plot_theme
+
+pl.us <- 
+  ggplot(plot_data, aes(x = year, y = us)) +
+  geom_segment(aes(x = year, xend = year, y = 0, yend = namerica), color = "lightblue", linewidth = 1) +
+  geom_point(size = 1, color = "lightblue", aes(y = namerica)) +
+  geom_segment(aes(x = year, xend = year, y = 0, yend = us), color = "blue", linewidth = .5) +
+  geom_point(size = 1, color = "blue") +
+ # geom_point(aes(y = fc), size = 1, color = "grey", alpha = .5) +
+  scale_x_continuous(breaks = seq(1985, 2020, 5), expand = c(0.02, 0)) +
+  scale_y_continuous(labels = scales::percent_format(), expand = c(0.0, 0)) +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(title = "<span style='color:blue; font-weight:bold;'>US</span> / <span style='color:lightblue; font-weight:bold;'>North America</span>", x = "", y = "") +
+  plot_theme
+
+pl.br <- 
+  ggplot(plot_data, aes(x = year, y = br)) +
+  geom_segment(aes(x = year, xend = year, y = 0, yend = samerica), color = "lightblue", linewidth = 1) +
+  geom_point(size = 1, color = "lightblue", aes(y = samerica)) +
+  geom_segment(aes(x = year, xend = year, y = 0, yend = br), color = "blue", linewidth = .5) +
+  geom_point(size = 1, color = "blue") +
+#  geom_point(aes(y = fc), size = 1, color = "grey", alpha = .5) +
+  scale_x_continuous(breaks = seq(1985, 2020, 5), expand = c(0.02, 0)) +
+  scale_y_continuous(labels = scales::percent_format(), expand = c(0.0, 0)) +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(title = "<span style='color:blue; font-weight:bold;'>Brazil</span> / <span style='color:lightblue; font-weight:bold;'>South America</span>", x = "", y = "") +
+  plot_theme
+
+pl.ru <- 
+  ggplot(plot_data, aes(x = year, y = ru)) +
+  geom_segment(aes(x = year, xend = year, y = 0, yend = war), color = "lightblue", linewidth = 1) +
+  geom_point(size = 1, color = "lightblue", aes(x = year, y = war)) +
+  geom_segment(aes(x = year+.2, xend = year+.2, y = 0, yend = ua), color = "yellow", linewidth = 1) +
+  geom_point(size = 1, color = "yellow", aes(x = year+.2, y = ua)) +
+  geom_segment(aes(x = year-.2, xend = year-.2, y = 0, yend = ru), color = "blue", linewidth = .5) +
+  geom_point(size = 1, color = "blue", aes(x = year-.2)) +
+#  geom_point(aes(y = fc), size = 1, color = "grey", alpha = .5) +
+  scale_x_continuous(breaks = seq(1985, 2020, 5), expand = c(0.02, 0)) +
+  scale_y_continuous(labels = scales::percent_format(), expand = c(0.0, 0)) +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(title = "<span style='color:blue; font-weight:bold;'>Russia</span> <span style='color:lightblue; font-weight:bold;'>or</span> <span style='color:yellow; font-weight:bold;'>Ukraine</span>", x = "", y = "") +
+  plot_theme
+
+pl.ind <- 
+  ggplot(plot_data, aes(x = year, y = `in`)) +
+  geom_segment(aes(x = year-.1, xend = year-.1, y = 0, yend = oceania), color = "lightblue", linewidth = 1) +
+  geom_point(size = 1, color = "lightblue", aes(x = year-.1, y = oceania)) +
+  geom_segment(aes(x = year+.1, xend = year+.1, y = 0, yend = `in`), color = "blue", linewidth = .5) +
+  geom_point(size = 1, color = "blue", aes(x = year+.1)) +
+#  geom_point(aes(y = fc), size = 1, color = "grey", alpha = .5) +
+  scale_x_continuous(breaks = seq(1985, 2020, 5), expand = c(0.02, 0)) +
+  scale_y_continuous(labels = scales::percent_format(), expand = c(0.0, 0)) +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(title = "<span style='color:blue; font-weight:bold;'>India</span> / <span style='color:lightblue; font-weight:bold;'>Oceania</span>", x = "", y = "") +
+  plot_theme
+
+pl.cn <- 
+  ggplot(plot_data, aes(x = year, y = cn)) +
+  geom_segment(aes(x = year, xend = year, y = 0, yend = asia), color = "lightblue", linewidth = 1) +
+  geom_point(size = 1, color = "lightblue", aes(y = asia)) +
+  geom_segment(aes(x = year, xend = year, y = 0, yend = cn), color = "blue", linewidth = .5) +
+  geom_point(size = 1, color = "blue" ) +
+#  geom_point(aes(y = fc), size = 1, color = "grey", alpha = .5) +
+  scale_x_continuous(breaks = seq(1985, 2020, 5), expand = c(0.02, 0)) +
+  scale_y_continuous(labels = scales::percent_format(), expand = c(0.0, 0)) +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(title = "<span style='color:blue; font-weight:bold;'>China</span> / <span style='color:lightblue; font-weight:bold;'>Asia</span>", x = "", y = "") +
+  plot_theme
+
+pl.za <- 
+  ggplot(plot_data, aes(x = year, y = za)) +
+  geom_segment(aes(x = year, xend = year, y = 0, yend = africa), color = "lightblue", linewidth = 1) +
+  geom_point(size = 1, color = "lightblue", aes(y = africa)) +
+  geom_segment(aes(x = year, xend = year, y = 0, yend = za), color = "blue", linewidth = .5) +
+  geom_point(size = 1, color = "blue" ) +
+#  geom_point(aes(y = fc), size = 1, color = "grey", alpha = .5) +
+  scale_x_continuous(breaks = seq(1985, 2020, 5), expand = c(0.02, 0)) +
+  scale_y_continuous(labels = scales::percent_format(), expand = c(0.0, 0)) +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(title = "<span style='color:blue; font-weight:bold;'>South Africa</span> / <span style='color:lightblue; font-weight:bold;'>Africa</span>", x = "", y = "") +
+  plot_theme
+
+# Lower panel - US + BRICS
+pl.lower <- (pl.us + pl.br) / (pl.ru + pl.ind) / (pl.cn + pl.za)
+
+# Combined plot
+pl <- (pl.all + pl.lower) +
+  plot_annotation(
+    title = "On which foreign countries does the European Commission focus in its public communication",
+    subtitle = "Country/regional shares in public communication documents mentioning non-EU states\n",
+    caption = "Based on all country insights, daily news, press releases, read-outs, statements, and Commissioner speeches the Commission has published 1985-2023.",
+    theme = theme(plot.title = element_markdown(size = 16, face = "bold", hjust = 0.5),
+                  plot.subtitle = element_text(hjust = 0.5, face = "bold"))
+  )
+
+pl
+ggsave("./output/descriptive_plots/ForeignCountryRegionRelativeFocus_OverTime.png", pl, height = 20, width = 36, units = "cm")
+
+
+# Clean up ####
 rm(list = ls(pattern = "^pl"), shares)
 gc()
 
@@ -886,4 +920,4 @@ gc()
 
 
 
-  
+

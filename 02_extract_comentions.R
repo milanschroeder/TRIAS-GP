@@ -95,9 +95,9 @@ rm(relevant_docs)
 
 relevant_paras <- 
   read_rds(paste0(data_path, "allCMs_paralevel.rds")) %>% 
-  select(para_id, doc_id, date, doc_pos_total, EU_expl:last_col()) %>% 
+  left_join(., read_rds(paste0(data_path, "../cleaned_data/data_doclevel.rds")) %>% select(doc_id, date), join_by(doc_id)) %>% 
+  select(text_id, doc_id, date, doc_pos, EU_expl:last_col()) %>% 
   pivot_longer(EU_expl:last_col(), names_to = "ctry", values_to = "mentions") %>% 
-  
   
   # no ctry groups:
   filter(!ctry %in% c("EU", "AFRICA", "AMERICA", "ASIA", "EUROPE", "OCEANIA", 
@@ -106,14 +106,14 @@ relevant_paras <-
   mutate(ctry = ifelse(ctry == "EU_expl", "EU", ctry)) %>% 
   
   # only docs >= 2 CM: 
-  group_by(para_id) %>% 
+  group_by(text_id) %>% 
   mutate(comentions = sum(mentions > 0)) %>% 
   ungroup() %>% 
   filter(comentions > 1 & mentions > 0)
 
 relevant_paras %<>% 
   inner_join(., relevant_paras %>% 
-               select(para_id, ctry, mentions), join_by(para_id)) %>% 
+               select(text_id, ctry, mentions), join_by(text_id)) %>% 
   filter(ctry.x < ctry.y) %>% 
   relocate(ctry.y, mentions.y, .after = ctry.x)
 

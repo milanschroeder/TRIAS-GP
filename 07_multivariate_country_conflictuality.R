@@ -65,8 +65,11 @@ cm <- cm %>%
 # Sentence-level language scales 
 sc <- read_rds(paste0(data_path, "cleaned_data/scaling_glove_sentlevel.rds")) %>% 
   filter(sentence_id %in% sent$sentence_id) %>% # Filter as above
-  select(sentence_id, coop_confl, coop) %>% 
-  rename(cc = coop_confl) %>% # Focusing on this one for now
+   select(sentence_id, security, economy, coop_confl
+          ) %>% 
+  mutate(WI = 2 * (security * economy) / (security + economy) * 0.01) %>% # harmonized mean
+  rename(cc = coop_confl
+         ) %>%  # Focusing on this one for now
   mutate(cc = max(cc, na.rm = T) + min(cc, na.rm = T) - cc) # Get directionality right, more "hostile" language should have higher values (correct downstream)
 
 
@@ -164,7 +167,8 @@ ann_reg <- function(data, time.min, time.max) {
     pivot_longer(everything(), names_to = "var", values_to = "value") %>% 
     group_by(var) %>% 
     summarise(sd = sd(value)) %>% 
-    filter(is.na(sd) | sd == 0)
+    filter(#is.na(sd) | 
+             sd == 0)
   data_reg <- data_std %>% 
     select(-c(constants$var))
   
@@ -324,4 +328,11 @@ ru22 <- cm.foreign %>%
 write_rds(ru22, paste0(data_path, "RussiaSentences2022.rds"))
 
 
+# weaponized interdependence
+cmsc %>% 
+  ggplot(aes(x = economy, y = security))+
+  geom_jitter()+ 
+  geom_abline(intercept = 0, slope = 1)+ 
+  theme_minimal()+
+  facet_wrap(vars(year))
 

@@ -72,31 +72,35 @@ all_cms <- bind_cols(
   df %>% 
     mutate(EU_expl = str_count(text, "(?i)\bEU\b|European Union"),
            BRICS_expl = str_count(text, "(?i)\bBRICS\b"),
-           UN_expl = str_count(text, "(?i)\bUN\b|United Nations|\bUNO\b")) %>% 
+           UN_expl = str_count(text, "(?i)\bUN\b|United Nations|\bUNO\b"),
+           US = str_count(text, "\\b(USA?|U\\.S\\.A?)[\\- \\.]|(?i:united states|washington|new york|(?<!(latino?|central|north|south|ibero|hispano)[\\- ])america)") 
+           # based on:
+            #newsmap::data_dictionary_newsmap_en$AMERICA$NORTH$US -> [1] "united states" "us" "american*" "washington" "new york"  
+           ) %>% 
     select(-text),
   cont_hits %>% select(-doc_id),
   cont_hits_expl %>% select(-doc_id),
   cont_hits_total %>% select(-doc_id),
-  ctry_hits %>% select(-doc_id)
+  ctry_hits %>% select(-doc_id, -US)
 )
 
 return(all_cms)
 }
 
 # documnet level:
-all_cms_doc <- read_rds("../data/data_doclevel_clean.rds") %>% rename(text = text_doc) %>% 
+all_cms_doc <- read_rds("~/Nextcloud/Shared/TRIAS Brückenprojekt/Daten/cleaned_data/data_doclevel.rds") %>% rename(text = text_doc) %>% 
   extract_CMs()
 write_rds(all_cms_doc, "~/Nextcloud/Shared/TRIAS Brückenprojekt/Daten/CountryMentions/allCMs_doclevel.rds")
 rm(all_cms_doc)
 
 # paragraph level:
-all_cms_para <- read_rds("../data/paras_newsplit.rds") %>% rename(text = text_para) %>% 
-  extract_CMs(id_var = .$para_id) 
+all_cms_para <- read_rds("~/Nextcloud/Shared/TRIAS Brückenprojekt/Daten/cleaned_data/data_paralevel.rds") %>% rename(text = text_para) %>%
+  extract_CMs(id_var = .$para_id)
 write_rds(all_cms_para, "~/Nextcloud/Shared/TRIAS Brückenprojekt/Daten/CountryMentions/allCMs_paralevel.rds")
 rm(all_cms_para)
 
 # sentence level:
-all_cms_sent <- read_rds("../data/data_sentlevel.rds") %>% rename(text = text_sent) %>% 
+all_cms_sent <- read_rds("~/Nextcloud/Shared/TRIAS Brückenprojekt/Daten/cleaned_data/data_sentlevel.rds") %>% rename(text = text_sent) %>% 
   extract_CMs(id_var = .$sentence_id) 
 write_rds(all_cms_sent, "~/Nextcloud/Shared/TRIAS Brückenprojekt/Daten/CountryMentions/allCMs_sentlevel.rds")
 rm(all_cms_sent)

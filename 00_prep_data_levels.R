@@ -399,6 +399,32 @@ data_sentlevel <-
 write_rds(data_sentlevel, paste0(data_path, "data_sentlevel.rds"))
 
 
-# prepa for CAP codings:
+# prepare for CAP codings: ####
 remaining_CAP <- read_rds(paste0(data_path, "data_paralevel.rds")) %>% filter(is.na(CAP_code)) %>% distinct(text_para, .keep_all = T) %>% select(id = para_id, text = text_para)
 write_csv(remaining_CAP, "../data/remaining_CAP.csv")
+
+CAP_remaining_results <- read.csv("~/OneDrive - Hertie School/WZB/data/results_remaining_CAP_HikVKPpOzl_with_pred.csv")
+# CAP_remaining_softmax <- read.csv("~/OneDrive - Hertie School/WZB/data/softmax_remaining_CAP_HikVKPpOzl_softmax.csv") # top3 candidate labels with prob
+
+data_paralevel <- 
+  bind_rows(
+    data_paralevel %>% 
+    filter(!is.na(CAP_code)),
+    data_paralevel %>%
+      filter(is.na(CAP_code)) %>% 
+      select(-c(CAP_code, CAP_name)) %>% 
+      left_join(., CAP_remaining_results %>% select(-id, CAP_code = major_topic_pred, CAP_name = major_topic_pred_name), 
+                join_by(text_para == text))
+      ) %>% 
+  arrange(para_id)
+
+write_rds(data_paralevel, paste0(data_path, "data_paralevel.rds"))
+
+CMs <-
+  left_join(read_rds(paste0(data_path, "../CountryMentions/allCMs_paralevel.rds")),
+            read_rds(paste0(data_path, "data_paralevel.rds")) %>% select(para_id, code = CAP_code, name = CAP_name),
+            join_by(para_id)) %>% 
+  mutate(CAP_code = code, CAP_name = name) %>% 
+  select(-c(code, name))
+
+write_rds(CMs, paste0(data_path, "../CountryMentions/allCMs_paralevel.rds"))

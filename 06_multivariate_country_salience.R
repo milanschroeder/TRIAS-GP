@@ -79,15 +79,25 @@ cm.foreign <- cm %>%
   filter(!eu_member) %>% # Filter
   select(-eu_member)
 
+# documents that specifically talk about one non-eu state (clearer interpretation of friend-foe etc.)
+focused_docs <- cm.foreign %>% 
+  filter(mentions != 0) %>% 
+  group_by(doc_id) %>% 
+  filter(n() == 1) %>% 
+  ungroup()
 
 # Share of documents mentioning each country - full period
 mentions.full <- cm.foreign %>% 
+  filter(!iso2c %in% c("RU", "UA")) %>%
   group_by(iso2c) %>% 
   summarise(doc_share = mean(as.logical(mentions))) %>% 
   ungroup()
 
 # Share of documents mentioning each country - by year
-mentions.ann <- cm.foreign %>% 
+mentions.ann <- 
+  cm.foreign %>% 
+  filter(!iso2c %in% c("RU", "UA")) %>% 
+  #  filter(doc_id %in% focused_docs$doc_id) %>%
   group_by(iso2c, year) %>% 
   summarise(doc_share = mean(as.logical(mentions))) %>% 
   ungroup()
@@ -125,6 +135,7 @@ pl.con <-
         axis.text.y = element_text(color="blue", face = "bold"))
 
 ggsave("./output/descriptive_plots/ConcentrationOfCountryMentions_OverTime.png", pl.con, height = 10, width = 25, units = "cm")
+# ggsave("./output/descriptive_plots/ConcentrationOfCountryMentions_OverTime_noRU.png", pl.con, height = 10, width = 25, units = "cm")
 
 rm(pl.con, hhi, sum_shares)  
 
@@ -194,6 +205,7 @@ miss_vars <- colSums(is.na(df[, 4:ncol(df)])) %>%
 
 # Data available for modelling
 reg.df <- df %>% 
+  filter(!iso2c %in% c("RU", "UA")) %>% 
   filter(exp_complete) %>% 
   select(-exp_complete)
 

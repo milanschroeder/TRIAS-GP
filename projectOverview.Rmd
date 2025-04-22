@@ -28,21 +28,27 @@ knitr::opts_chunk$set(echo = TRUE)
 
 -   descriptives (*05_DescriptiveAnalyses.R*)
 
-![Concentration of Country References (incl. Russia)](/output/descriptive_plots/ConcentrationOfCountryMentions_OverTime.png)
+![***Document Types over Time:** General increase in communication mostly, except for Juncker. News (incl. daily news) rather constant since 2001; Statements since 2015; Press Releases most stable, much more speeches (in archive) since 2000.*](/output/descriptive_plots/CorpusDescription.png)
 
-```{r}
+![***Country References per CAP Classification over Time:** ...*](/output/descriptive_plots/ForeignCountry_CAP_OverTime.png)
 
-```
+![***Concentration of Country References (incl. Russia):** That peak is Russia.*](/output/descriptive_plots/ConcentrationOfCountryMentions_OverTime.png)
+
+![***Concentration of Country References (excl. Russia/Ukraine):** Without Russia, there is interesting variation -\> look closer!*](/output/descriptive_plots/ConcentrationOfCountryMentions_OverTime_noRU.png)
+
+![***Country References over Time:** Attention for BRICS starts only with Doha-Round (except Brazil: cont'd desinterested; Russia: always relevant, drives the general peak in 2022/23. Strong variation in general variation of external focus before that!*](/output/descriptive_plots/ForeignCountrySalience_OverTime.png)
+
+![***Country/Regional Focus in Foreign Country References over Time:***](/output/descriptive_plots/ForeignCountryRegionRelativeFocus_OverTime.png)
+
+![***Cooperation vs. Conflict Scaling over Time:** The peak in the general trend is based almost entirely on the Russian War. Interestingly, a similar but smaller trend to more conflictive framing can be seen for China. However, the Commission generally largely avoids conflictive language, therefore one should look into potential drops in cooperation for further insights.*](/output/descriptive_plots/CoopConflictCountries_OverTime.png)
+
+![Cooperation vs. Conflict Scaling Map: Longer trend away from "Wandel durch Handel" for Russia, US from more conflictive to neutral. Keep in mind: communication that talks about multiple countries involved on different sides of a conflict pulls all of them towards the conflictive end of the scale.](/output/descriptive_plots/CoopConflictCountries_Maps_OverTime.png)
 
 -   Analyse shift in explanatory variables
 
-    -   Determinants of country salience (*06_multivariate_country_salienc.R*)
+    -   Determinants of country salience (*06_multivariate_country_salience.R*)
 
-    ```{r}
-
-    ```
-
-    -   Determinants of country framing (*06_multivariate_country_conflictality.R*)
+    -   Determinants of country framing (*06_multivariate_country_conflictuality.R*)
 
 ```{r}
 

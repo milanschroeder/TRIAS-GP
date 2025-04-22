@@ -101,7 +101,7 @@ gc()
 # ~ XXX mins on HP
 start <- Sys.time()
 tokens_para <- 
-    read_rds(paste0(data_path, "cleaned_data/data_paralevel.rds")) %>% select(text = text_para, para_id) %>% 
+    read_rds(paste0(data_path, "cleaned_data/data_paralevel.rds")) %>% select(text = text_para, text_id) %>% 
       mutate(text = str_remove_all(text, "\'|’|#|\\.|[0-9]"), # choose to just remove . as u.s. much more relvant than www.ec.europa.eu
              text = str_replace_all(text, "_|-", " ")) %>% 
       unnest_tokens(input = text, # name of text var
@@ -122,14 +122,14 @@ para_weights <- tokens_para %>%
   left_join(
   simils,
   join_by(token)) %>%
-  group_by(para_id) %>% 
+  group_by(text_id) %>% 
   summarise(across(where(is.numeric), mean, na.rm = T)) %>% # Means of semantic simil weights by para, unknown tokens excluded (grouping var should be automatically excluded)
   ungroup()
 Sys.time()-start
 
 # Export
-write_rds(tokens_para, paste0(data_path, "cleaned_data/scaling_glove_paralevel.rds"))
-rm(tokens_para)
+write_rds(para_weights, paste0(data_path, "cleaned_data/scaling_glove_paralevel.rds"))
+rm(para_weights, tokens_para)
 
 
 
