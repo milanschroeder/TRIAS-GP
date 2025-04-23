@@ -661,7 +661,7 @@ cm.all %>% filter(mentions > 0 & year < 2024 & !eu) %>%
   theme_bw() + 
   labs(x = "", y= "", fill = "Country")+
   plot_annotation(
-    title = "Does the Commission focus on major powers in its pubic communication?",
+    title = "Does the Commission focus on major powers in its public communication?",
     subtitle = "Relative Country Focus among non-EU countries mentioned in European Commission Public Communication Documents, 1985-2023",
     caption = "Based on all country insights, daily news, press releases, read-outs, statements, and Commissioner speeches the Commission has published 1985-2023.",
     theme = theme(plot.title = element_markdown(size = 16, face = "bold", hjust = 0.5),
@@ -884,17 +884,21 @@ pl.br <-
 
 pl.war <- 
   ggplot(plot_data, aes(x = year, y = ru)) +
-  geom_segment(aes(x = year, xend = year, y = 0, yend = war), color = "lightblue", linewidth = 1) +
-  geom_point(size = 1, color = "lightblue", aes(x = year, y = war)) +
-  geom_segment(aes(x = year+.2, xend = year+.2, y = 0, yend = ua), color = "yellow", linewidth = 1) +
-  geom_point(size = 1, color = "yellow", aes(x = year+.2, y = ua)) +
-  geom_segment(aes(x = year-.2, xend = year-.2, y = 0, yend = ru), color = "blue", linewidth = .5) +
-  geom_point(size = 1, color = "blue", aes(x = year-.2)) +
-  #  geom_point(aes(y = fc), size = 1, color = "grey", alpha = .5) +
+  # geom_segment(aes(x = year, xend = year, y = 0, yend = war), color = "lightblue", linewidth = 1) +
+  # geom_point(size = 1, color = "lightblue", aes(x = year, y = war)) +
+
+  geom_segment(aes(x = year, xend = year, y = 0, yend = ua), color = "blue", linewidth = 1.5) +
+  geom_point(size = 1.5, color = "blue", aes(x = year, y = ua)) +
+  
+  # geom_segment(aes(x = year+.2, xend = year+.2, y = 0, yend = ua), color = "yellow", linewidth = 1) +
+  # geom_point(size = 1, color = "yellow", aes(x = year+.2, y = ua)) +
+  geom_segment(aes(x = year-.2, xend = year-.2, y = 0, yend = ru), color = "red", linewidth = 1.5) +
+  geom_point(size = 1.5, color = "red", aes(x = year-.2)) +
+  #  geom_point(aes(y = fc), size = 1, color = "grey", alpha = 1) +
   scale_x_continuous(breaks = seq(1985, 2020, 5), expand = c(0.02, 0)) +
   scale_y_continuous(labels = scales::percent_format(), expand = c(0.0, 0)) +
   coord_cartesian(ylim = c(0, 1)) +
-  labs(title = "<span style='color:blue; font-weight:bold;'>Russia</span> <span style='color:lightblue; font-weight:bold;'>or</span> <span style='color:yellow; font-weight:bold;'>Ukraine</span>", x = "", y = "") +
+  labs(title = "<span style='color:red; font-weight:bold;'>Russia</span> / <span style='color:blue; font-weight:bold;'>Ukraine</span>", x = "", y = "") +
   plot_theme
 
 
@@ -961,7 +965,8 @@ pl.za <-
 pl.lower <- (pl.br +  pl.ru) / (pl.ind + pl.cn) / (pl.za + pl.us)
 
 # Combined plot
-pl <- (pl.all + pl.lower) +
+pl <- (pl.war#all 
+       + pl.lower) +
   plot_annotation(
     title = "On which foreign countries does the European Commission focus in its public communication?",
     subtitle = "Country/regional shares in public communication documents mentioning non-EU states\n",
@@ -971,7 +976,8 @@ pl <- (pl.all + pl.lower) +
   )
 
 pl
-ggsave("./output/descriptive_plots/ForeignCountryRegionRelativeFocus_OverTime.png", pl, height = 20, width = 36, units = "cm")
+#ggsave("./output/descriptive_plots/ForeignCountryRegionRelativeFocus_OverTime.png", pl, height = 20, width = 36, units = "cm")
+ggsave("./output/descriptive_plots/ForeignCountryRegionRelativeFocus_OverTime_WarFocus.png", pl, height = 20, width = 36, units = "cm")
 
 
 # Clean up ####
