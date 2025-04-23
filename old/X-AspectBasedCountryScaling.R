@@ -1,7 +1,7 @@
 #################################################################################
 # Project:  TRIAS - Geopolitics
 # Tasks:    Scaling along aspect phrases around country mentions
-# Author:   @ChRauh (01.04.2025)
+# Author:   @ChRauh (22.04.2025)
 #################################################################################
 
 
@@ -10,21 +10,22 @@ library(tidyverse) # Easily Install and Load the 'Tidyverse' CRAN v2.0.0
 library(countrycode) # Convert Country Names and Country Codes CRAN v1.4.0
 library(broom) # Convert Statistical Objects into Tidy Tibbles CRAN v1.0.4
 library(glue) # Interpreted String Literals CRAN v1.6.2
-library(grid)
-library(gridExtra) # Miscellaneous Functions for "Grid" Graphics CRAN v2.3
-library(gtable) # Arrange 'Grobs' in Tables CRAN v0.3.6
-library(patchwork) # The Composer of Plots CRAN v1.2.0
-library(ggtext) # Improved Text Rendering Support for 'ggplot2' CRAN v0.1.2
+library(spacyr)
+library(rsyntax)
+library(quanteda)
 
+
+# Custom phrase extraction tools 
 library(AspectPhraseEN)
+source("EntityPhrase_dev.R")
 
 
 # Paths ####
 # Needed as big files currently not part of the repo
 
 # data_path <- "~/Nextcloud/Shared/TRIAS Brückenprojekt/Daten/" # MS/WZB
-# data_path <- "C:/Users/rauh/NextCloudSync/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/WZB
-data_path <- "D:/WZB-Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/HP
+data_path <- "C:/Users/rauh/NextCloudSync/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/WZB
+# data_path <- "D:/WZB-Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/HP
 # data_path <- "C:/Users/rauh/Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/TP
 
 
@@ -57,9 +58,9 @@ cp <- read_rds(paste0(data_path, "external_data/CountryYearPanelComplete.rds"))
 
 # Panel includes only countries that appear in one of the big IR data sets (= official states at some point)
 length(unique(cp$iso2c)) # 241
-# Newsmap dictionary should be somewhat broader, but isn't!? Cf. doc level salience analyses
+# Newsmap dictionary should be somewhat broader - but isn't, as it contains only the countries the Comm mentioned at least once
 length(unique(cm$iso2c)) # 233
-# I reduce the country mentions to the cp sample to ensure consistency throughout - MILAN please check
+# I reduce the country mentions to the cp sample to ensure consistency throughout
 cm <- cm %>% 
   filter(iso2c %in% unique(cp$iso2c))
 
@@ -76,51 +77,43 @@ cterms <- newsmap::data_dictionary_newsmap_en %>%
   # Flatten the listed dictionary entries and turn them into a base R regex
   mutate(value = value %>% 
            flatten() %>% 
-           map_chr(., ~ paste0(.x, collapse = ")|(")) %>% 
-           str_remove_all(fixed("*"))) %>% 
-  mutate(value = paste0("(", value, ")")) %>% 
-  mutate(value = str_replace_all(value, " ", "|")) %>% # Does this make sense??? multiword dictionary entries
+           map_chr(., ~ paste0(.x, collapse = "\\b)|(\\b")) %>% 
+           str_replace_all(fixed("*"), "[a-z]{0,}")) %>% 
+  mutate(value = paste0("(\\b", value, "\\b)")) %>% 
+  mutate(value = str_replace_all(value, " ", "|")) %>% # Multiword dictionary entries  - create erros - TO DO!!!
   rename(iso2c = name,
          cregex = value)
 
 
 
 # Enrich country mentions with country regex and full text of respective sentence ####
-cm <- cm %>% 
+cm2 <- cm %>% 
   left_join(cterms, by = "iso2c") %>% 
-  left_join(sent %>% select(sentence_id, text_sent), by = "sentence_id")
+  left_join(sent %>% select(sentence_id, text_sent), by = "sentence_id") %>% 
+  mutate(text_sent = str_replace_all(text_sent, "\\s+", " ")) %>% # Multiple consecutive whtitespace to one (for correct dependency parsing)
+  mutate(text_sent = str_remove(text_sent, "^IP/[0-9]{1,4}/[0-9]{1,4} ")) %>% # Clean headers - SHOULD BE DONE BEFORE EXTRACTING COUNTRY MENTIONS
+  mutate(text_sent = str_remove(text_sent, "^Brussels, [0-9]{1,2} [A-Za-z]* [0-9]{1,4} ")) # Clean headers - SHOULD BE DONE BEFORE EXTRACTING COUNTRY MENTIONS
 
 
 
 
 
-# Tests
-i <- sample(1:nrow(cm), 1)
+# Qualitative inspection ####
+i <- sample(1:nrow(cm2), 1)
 i
-cm$iso2c[i]
-cm$cregex[i]
-cm$text_sent[i]
-aspect_phrase(text = cm$text_sent[i], aspect = cm$cregex[i], plot = T)           
-aspect_phrase(text = cm$text_sent[i], aspect = cm$cregex[i], plot = F)$phrase_words
-
-# Word boundaries must be respected, at least in the beginning of the markers \\bamerican
-# replace * with [a-z]{0,}
+cm$sentence_id[i]
+cm2$iso2c[i]
+cm2$cregex[i]
+cm2$text_sent[i]
+entity_phrase(text = cm2$text_sent[i], entity = cm2$cregex[i], plot = T)           
+entity_phrase(text = cm2$text_sent[i], entity = cm2$cregex[i], plot = F)$phrase_words
+# aspect_phrase(text = cm2$text_sent[i], aspect = cm2$cregex[i], plot = T)           
+# aspect_phrase(text = cm2$text_sent[i], aspect = cm2$cregex[i], plot = F)$phrase_words
+# sent$text_sent[sent$sentence_id == cm$sentence_id[i]]
 
 # Multiword matching creates errors (republic)
-# Clean out duplicated whitespaces - sets off the dependency parser!
+# Newsmap dictionaries sucks: "american"
+# Doha and Uruguay rounbds
 
-
-# Brussels ....
-# Newsmap dictionaries such: "american"
-
-# AP observations:
-# needs an exclusion for passive "by" constructions to include the root at level 2
-# amod <- nsubj <- ROOT would be also useful at level 2
-# general - how much harm does including the Root at level 2 do?
-
-# Downward filling of aspect must be stooped at conjuncts
-# Upward conjunctions are also often too much (frequent: lists of countries)
-
-# Filter aspect terms along lemmas/tokens, not on aspect label (otherwise downwards fill gets lost!)
 
 
