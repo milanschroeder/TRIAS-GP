@@ -82,7 +82,7 @@ all_cms <- bind_cols(
   cont_hits_expl %>% select(-doc_id),
   cont_hits_total %>% select(-doc_id),
   ctry_hits %>% select(-doc_id, -US)
-)
+) %>% relocate(US, .after = PM)
 
 return(all_cms)
 }
