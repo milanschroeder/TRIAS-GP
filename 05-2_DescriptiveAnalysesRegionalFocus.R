@@ -615,7 +615,7 @@ cm.foreign <- cm %>%
 
 cm.eu <- cm %>% 
   left_join(cp %>% select(year, iso2c, eu_member), by = c("year", "iso2c")) %>% # get EU membership (time sensitive)
-  filter(eu_member) # %>% # Filter
+  #filter(eu_member) # %>% # Filter
   select(-eu_member)
 
   cm.all <- cm %>% 
@@ -634,6 +634,7 @@ cm.eu <- cm %>%
            oceania = (continent == "Oceania" & mentions > 0),
            samerica = (region == "Latin America & Caribbean" & mentions > 0),
            namerica = (region == "North America" & mentions > 0),
+           america = namerica | samerica,
            others = (!iso2c %in% c("ZA", "CN", "IN", # "UA", 
                                    "RU", "BR", "US") & mentions > 0), # only BRICS+US for now
            eu = (eu_member & mentions > 0),
@@ -673,7 +674,7 @@ cm.all %>% filter(mentions > 0 & year < 2024 & !eu) %>%
   
 shares <- 
  cm.all %>% 
-  filter(!eu_member) # %>% # Filter
+  filter(!eu_member) %>% # Filter
   select(-eu_member) %>% 
    
   group_by(doc_id, year) %>% 
@@ -858,8 +859,8 @@ pl.all <-
 
 pl.us <- 
   ggplot(plot_data, aes(x = year, y = us)) +
-  geom_segment(aes(x = year, xend = year, y = 0, yend = namerica), color = "lightblue", linewidth = 1) +
-  geom_point(size = 1, color = "lightblue", aes(y = namerica)) +
+  geom_segment(aes(x = year, xend = year, y = 0, yend = america), color = "lightblue", linewidth = 1) +
+  geom_point(size = 1, color = "lightblue", aes(y = america)) +
   geom_segment(aes(x = year, xend = year, y = 0, yend = us), color = "blue", linewidth = .5) +
   geom_point(size = 1, color = "blue") +
  # geom_point(aes(y = fc), size = 1, color = "grey", alpha = .5) +

@@ -381,11 +381,11 @@ pl.comb <-
   plot_layout(widths = c(1,5))+
   plot_annotation(title = "Which kind of foreign countries does the Commission speak about?",
                   subtitle = "<br>How different country characteristics relate to how frequently the Commission<br> mentions these countries in its public communication.<br>Statistically significant estimates (p<.05)<br>marked in <span style='color:blue; font-weight:bold;'>blue (positive)</span> or <span style='color:darkred; font-weight:bold;'>red (negative)</span>.<br>",
-                  caption = "Multivariate linear regression models of the share of Commission documents mentioning a country.",
+                  caption = "Multivariate linear regression models of the share of Commission documents mentioning a country.\nRussia & Ukraine excluded.",
                   theme = theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
                                 plot.subtitle = element_markdown(hjust = 0.5)))  
 
-ggsave("./output/multivariate_plots/CountrySalience_Explained.png", pl.comb, 
+ggsave("./output/multivariate_plots/CountrySalience_Explained_noRU.png", pl.comb, 
        width = 16, height = 20, units = "cm")
 
 # full country year panel

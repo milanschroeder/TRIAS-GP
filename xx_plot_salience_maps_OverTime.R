@@ -1,7 +1,7 @@
 #########################################################################
 # Project:  TRIAS - Geopolitics
 # Tasks:    Plot Country Salience Maps over Time
-# Author:   @Milan Schröder (23.04.2025)
+# Author:   @milanschroeder (23.04.2025)
 #########################################################################
 
 # Packages #####
@@ -289,7 +289,7 @@ pl.comb <-
   pl.all+((pl.85_89+pl.90_00)/(pl.01_10+pl.11_23))+
   plot_annotation(title = "Which Foreign Countries does the European Commission publicly communicate about over time?",
                 #  subtitle = "Color indicates indicates the normalized frequency by which the Commission has meantioned the country.",
-                  caption = "\nBased on all country insights, daily news, press releases, read-outs, statements, and Commissioner speeches the Commission has published 1985-2023.\nCountries appearing fully white/invisible are either EU member states or not mentioned in the respective period.",
+                  caption = "\nBased on all country insights, daily news, press releases, read-outs, statements, and Commissioner speeches the Commission has published 1985-2023.\nCountries appearing fully white/invisible are not mentioned in the respective period.",
                   theme = theme(plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
                                 plot.subtitle = element_markdown(hjust = 0.5))) +  
   plot_layout(guides = "collect") & 
@@ -297,6 +297,6 @@ pl.comb <-
         legend.box = "vertical") 
 
 
-ggsave("./output/descriptive_plots/Salience_Maps_OverTime.png", pl.comb, height = 22, width = 36, units = "cm")
+ggsave("./output/descriptive_plots/Salience_Maps_OverTime_withEU.png", pl.comb, height = 22, width = 36, units = "cm")
 
 

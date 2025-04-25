@@ -29,73 +29,75 @@ data_path <- "~/Nextcloud/Shared/TRIAS Brückenprojekt/Daten/" # MS/WZB
 
 # Sentence level data ####
 
-# Load and filter (should be equivalently done for all other data)
-sent <- read_rds(paste0(data_path, "cleaned_data/data_sentlevel.rds")) %>% 
-  # Language filter
-  filter(lang_sent == "en") %>%
-  # Doc type filter
-  filter(doc_type %in% c("Country insights", "Daily news", "News", "Press release", "Read-out", "Speech", "Statement")) %>% 
-  # Year var
-  mutate(year = str_extract(date, "^[0-9]{4}"))
+# # Load and filter (should be equivalently done for all other data)
+# sent <- read_rds(paste0(data_path, "cleaned_data/data_sentlevel.rds")) %>% 
+#   # Language filter
+#   filter(lang_sent == "en") %>%
+#   # Doc type filter
+#   filter(doc_type %in% c("Country insights", "Daily news", "News", "Press release", "Read-out", "Speech", "Statement")) %>% 
+#   # Year var
+#   mutate(year = str_extract(date, "^[0-9]{4}"))
+# 
+# 
+# 
+# # Country mentions - sentence level ####
+# cm <- read_rds(paste0(data_path, "CountryMentions/allCMs_sentlevel.rds")) %>% 
+#   # filter(sentence_id %in% sent$sentence_id) %>% # Filter as above
+#   mutate(year = str_extract(date, "^[0-9]{4}") %>% as.numeric()) %>% 
+#   select(c(sentence_id, year, BI:ncol(.))) %>% # Only few meta and indvidual country indicators
+#   pivot_longer(cols = 3:ncol(.), names_to = "iso2c", values_to = "mentions") %>% # Easier to handle
+#   filter(mentions > 0) # Sentences w/out country mentions not needed here
+# gc()
+# 
+# 
+# # External country/year panel ####
+# cp <- read_rds(paste0(data_path, "external_data/CountryYearPanelComplete.rds")) 
+# 
+# # Panel includes only countries that appear in one of the big IR data sets (= official states at some point)
+# length(unique(cp$iso2c)) # 241
+# # Newsmap dictionary should be somewhat broader, but isn't!? Cf. doc level salience analyses
+# length(unique(cm$iso2c)) # 233
+# # I reduce the country mentions to the cp sample to ensure consistency throughout - MILAN please check
+# cm <- cm %>% 
+#   filter(iso2c %in% unique(cp$iso2c))
+# 
+# 
+# # Sentence-level language scales 
+# sc <- read_rds(paste0(data_path, "cleaned_data/scaling_glove_sentlevel.rds")) %>% 
+#   filter(sentence_id %in% sent$sentence_id) %>% # Filter as above
+#   select(sentence_id, security, economy, coop_confl
+#   ) %>% 
+#   mutate(WI = 2 * (security * economy) / (security + economy) * 0.01) %>% # harmonized mean
+#   rename(cc = coop_confl
+#   ) %>%  # Focusing on this one for now
+#   mutate(cc = max(cc, na.rm = T) + min(cc, na.rm = T) - cc) # Get directionality right, more "hostile" language should have higher values (correct downstream)
+# 
+# 
+# # Merge scales to country mentions
+# cmsc <- cm %>% 
+#   left_join(sc, by = "sentence_id")
+# 
+# # Only non-eu countries
+# cm.foreign <- cmsc %>% 
+#   left_join(cp %>% select(year, iso2c, eu_member), by = c("year", "iso2c")) %>% # get EU membership (time sensitive)
+#   filter(!eu_member) %>% # Filter
+#   select(-eu_member)  
+# 
+# focused_sents <- cm.foreign %>% 
+#   filter(mentions != 0) %>% 
+#   group_by(sentence_id) %>% 
+#   #group_by(doc_id) %>% # or rather only sents from focused docs?!?
+#   filter(n() == 1) %>% 
+#   ungroup()
+# 
+# # Coop/confl language by country - full period
+# cc.full <- cm.foreign %>% 
+#   group_by(iso2c) %>% 
+#   summarise(cc = mean(cc, na.rm = T)) %>% 
+#   ungroup()
 
 
-
-# Country mentions - sentence level ####
-cm <- read_rds(paste0(data_path, "CountryMentions/allCMs_sentlevel.rds")) %>% 
-  # filter(sentence_id %in% sent$sentence_id) %>% # Filter as above
-  mutate(year = str_extract(date, "^[0-9]{4}") %>% as.numeric()) %>% 
-  select(c(sentence_id, year, BI:ncol(.))) %>% # Only few meta and indvidual country indicators
-  pivot_longer(cols = 3:ncol(.), names_to = "iso2c", values_to = "mentions") %>% # Easier to handle
-  filter(mentions > 0) # Sentences w/out country mentions not needed here
-gc()
-
-
-# External country/year panel ####
-cp <- read_rds(paste0(data_path, "external_data/CountryYearPanelComplete.rds")) 
-
-# Panel includes only countries that appear in one of the big IR data sets (= official states at some point)
-length(unique(cp$iso2c)) # 241
-# Newsmap dictionary should be somewhat broader, but isn't!? Cf. doc level salience analyses
-length(unique(cm$iso2c)) # 233
-# I reduce the country mentions to the cp sample to ensure consistency throughout - MILAN please check
-cm <- cm %>% 
-  filter(iso2c %in% unique(cp$iso2c))
-
-
-# Sentence-level language scales 
-sc <- read_rds(paste0(data_path, "cleaned_data/scaling_glove_sentlevel.rds")) %>% 
-  filter(sentence_id %in% sent$sentence_id) %>% # Filter as above
-  select(sentence_id, security, economy, coop_confl
-  ) %>% 
-  mutate(WI = 2 * (security * economy) / (security + economy) * 0.01) %>% # harmonized mean
-  rename(cc = coop_confl
-  ) %>%  # Focusing on this one for now
-  mutate(cc = max(cc, na.rm = T) + min(cc, na.rm = T) - cc) # Get directionality right, more "hostile" language should have higher values (correct downstream)
-
-
-# Merge scales to country mentions
-cmsc <- cm %>% 
-  left_join(sc, by = "sentence_id")
-
-# Only non-eu countries
-cm.foreign <- cmsc %>% 
-  left_join(cp %>% select(year, iso2c, eu_member), by = c("year", "iso2c")) %>% # get EU membership (time sensitive)
-  filter(!eu_member) %>% # Filter
-  select(-eu_member)  
-
-focused_sents <- cm.foreign %>% 
-  filter(mentions != 0) %>% 
-  group_by(sentence_id) %>% 
-  #group_by(doc_id) %>% # or rather only sents from focused docs?!?
-  filter(n() == 1) %>% 
-  ungroup()
-
-# Coop/confl language by country - full period
-cc.full <- cm.foreign %>% 
-  group_by(iso2c) %>% 
-  summarise(cc = mean(cc, na.rm = T)) %>% 
-  ungroup()
-
+cm <- read_rds(paste0(data_path, "cleaned_data/scaling_glove_aspectPhrases_nonEU.rds"))
 
 # Coop/confl language by country and year
 cc.ann <- cm %>% 
@@ -305,7 +307,7 @@ pl.full <-
 pl.comb <-
   pl.full+pl.period +
   plot_layout(widths = c(1,5))+
-  plot_annotation(title = "Which characteristics of countries may explain why<br>the Commission presents them with <span style='color:blue; font-weight:bold;'>friendly</span> or <span style='color:red; font-weight:bold;'>adversarial</span> language?",
+  plot_annotation(title = "Which characteristics of countries may explain why<br>the Commission presents them with <span style='color:blue; font-weight:bold;'>friendly</span> or <span style='color:darkred; font-weight:bold;'>adversarial</span> language?",
                   caption = "Multivariate linear regression models of the average, embedding-based friend/foe language scales\nof relevant phrases refering a country in Commission public communication documents. \nRussia & Ukraine excluded.",
                   theme = theme(plot.title = element_markdown(size = 12, face = "bold", hjust = 0.5),
                                 plot.subtitle = element_markdown(hjust = 0.5)))  
