@@ -25,7 +25,10 @@ all_cm_sents <-
   left_join(., read_rds(paste0(data_path, "cleaned_data/data_sentlevel.rds")),    # add metadata
             join_by(sentence_id)) %>% 
   left_join(., read_rds(paste0(data_path, "cleaned_data/scaling_glove_EntityPhrases.rds")) %>% select(-doc_id), # add scaling for stratification
-            join_by(sentence_id, iso2c)) 
+            join_by(sentence_id, iso2c)) %>% 
+  mutate(year = year(date)) %>% 
+  left_join(., read_rds(paste0(data_path, "external_data/CountryYearPanelComplete.rds")) %>% select(eu_member, year, iso2c),
+            join_by(iso2c, year))
 
 # stratification variables:
 ## year(bracket), friend-foe scaling
@@ -58,7 +61,9 @@ randomsamplesize = r/100 * samplesize # -> no fully random sample this time
 # construct sample groups ##########
 
 grouped_data <- all_cm_sents %>% 
-  filter(., !is.na(friend_foe)) %>%  # no value for stratification variable
+  filter(., 
+         !eu_member &
+         !is.na(friend_foe)) %>%  # no value for stratification variable
   mutate(
     strata = ntile(friend_foe, n = n_quantiles),
     year_bracket = cut(year, breaks = year_bracket_n)
