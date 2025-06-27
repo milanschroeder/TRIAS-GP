@@ -42,7 +42,7 @@ all_cm_sents <-
 set.seed(1905)
 
 overlap = .1
-n_coder = 3
+n_coder = 3 
 
 samplesize_percoder = 500
 samplesize = NA
@@ -89,6 +89,8 @@ sample_overlap <-
   sample_n(size = round(samplesize_overlap / n_sample_splits)) %>%  # round up, not down (default) to make up for meaningless paras
   ungroup()
 
+write_rds(sample, paste0(data_path, "validation/overlap_cases.rds"))
+
 
 
 for (coder in 1:n_coder) {
@@ -106,5 +108,22 @@ for (coder in 1:n_coder) {
   write_csv(sample, paste0(data_path, "validation/validation_sample_coder", coder, ".csv"))
 }
 
+
+# Additional Control Samples for Researchers
+
+for (coder in c("Christian", "Milan")) {
+  sample <- 
+    grouped_data %>% 
+    sample_n(size = round(samplesize_unique / n_sample_splits)) %>% 
+    ungroup() %>% 
+    
+    bind_rows(., sample_overlap) %>% 
+    slice_sample(prop = 1) %>% 
+    
+    select(id = sentence_id, text = text_sent, country, iso = iso2c) %>% 
+    mutate(label = NA_character_)
+  
+  write_csv(sample, paste0(data_path, "validation/validation_sample_check_", coder, ".csv"))
+}
 
 
