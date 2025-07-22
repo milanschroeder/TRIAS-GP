@@ -14,10 +14,14 @@ library(spacyr)
 library(rsyntax)
 library(quanteda)
 
+# Parallel processing
+library(furrr)
+plan(multisession)
+
 
 # Custom phrase extraction tools 
 # library(AspectPhraseEN)
-source("EntityPhrase_dev.R")
+source("EntityPhrase_dev_vec.R")
 
 
 # Paths ####
@@ -25,8 +29,8 @@ source("EntityPhrase_dev.R")
 
 # data_path <- "~/Nextcloud/Shared/TRIAS Brückenprojekt/Daten/" # MS/WZB
 # data_path <- "C:/Users/rauh/NextCloudSync/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/WZB
-data_path <- "D:/WZB-Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/HP
-# data_path <- "C:/Users/rauh/Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/TP
+# data_path <- "D:/WZB-Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/HP
+data_path <- "C:/Users/rauh/Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/TP
 
 
 
@@ -80,7 +84,7 @@ cterms <- newsmap::data_dictionary_newsmap_en %>%
            map_chr(., ~ paste0(.x, collapse = "\\b)|(\\b")) %>% 
            str_replace_all(fixed("*"), "[a-z]{0,}")) %>% 
   mutate(value = paste0("(\\b", value, "\\b)")) %>% 
-  mutate(value = str_replace_all(value, " ", "|")) %>% # Multiword dictionary entries  - create erros - TO DO!!!
+  mutate(value = str_replace_all(value, " ", "\\b|\\b")) %>% # Multiword dictionary entries  - create erros - TO DO!!!
   rename(iso2c = name,
          cregex = value)
 
@@ -104,43 +108,82 @@ cm2 <- cm %>%
 # cm2$iso2c[i]
 # cm2$cregex[i]
 # cm2$text_sent[i]
-# entity_phrase(text = cm2$text_sent[i], entity = cm2$cregex[i], plot = T)           
+# entity_phrase(text = cm2$text_sent[i], entity = cm2$cregex[i], plot = T)
 # entity_phrase(text = cm2$text_sent[i], entity = cm2$cregex[i], plot = F)$phrase_words
-# aspect_phrase(text = cm2$text_sent[i], aspect = cm2$cregex[i], plot = T)           
+# aspect_phrase(text = cm2$text_sent[i], aspect = cm2$cregex[i], plot = T)
 # aspect_phrase(text = cm2$text_sent[i], aspect = cm2$cregex[i], plot = F)$phrase_words
 # sent$text_sent[sent$sentence_id == cm$sentence_id[i]]
 
 # Multiword matching creates errors (republic)
 # Newsmap dictionaries sucks: "american"
 # Doha and Uruguay rounds
+# Lisbon treaty
 
 # Clean up ####
 rm(cp, cterms, sent)
 gc()
 
+# Benchmark phrase extraxtion ####
+# spacy_initialize(model = "en_core_web_sm")
+# 
+# library(purrr)
+# 
+# test1 <- cm2 %>%
+#   sample_n(size=100)
+# 
+# start <- Sys.time()
+# phrases1 <- map2_chr(test1$text_sent, test1$cregex, ~ {
+#   result <- entity_phrase(text = .x, entity = .y, plot = FALSE)
+#   if (is.null(result) || nrow(result) == 0) return(NA_character_)
+#   result$phrase_words[1]
+# })
+# duration1 <- Sys.time()-start # 45 seconds (~ 95 hours in total, unacceptable)
+# 
+# library(furrr)
+# plan(multisession)
+# 
+# start <- Sys.time()
+# phrases2 <- future_map2_chr(test1$text_sent, test1$cregex, ~ {
+#   result <- entity_phrase(text = .x, entity = .y, plot = FALSE)
+#   if (is.null(result) || nrow(result) == 0) return(NA_character_)
+#   result$phrase_words[1]
+# }, .progress = TRUE)
+# duration2 <- Sys.time()-start # 15 secs (31 hours in total, puh ...)
+# 
+# 
+# test1$phrases1 <- phrases1
+# test1$phrases2 <- phrases2
+# sum(test1$phrases1 != test1$phrases2, na.rm = T) # 0, good
+# 
+# i = 3
+# test1$cregex[i]
+# test1$phrases1[i]
+# entity_phrase(test1$text_sent[i], entity = test1$cregex[i], plot = T)
+# i = i+1
+
+
 
 # Extract country phrases ####
 # That runs a couple of hours ...
-# cm2 <- cm2 %>% 
-#   mutate(country_phrase = entity_phrase(text = text_sent, entity = cregex, plot = F)$phrase_words)
 
 spacy_initialize(model = "en_core_web_sm")
 
-cm2$country_phrase = NA
+start <- Sys.time()
+phrases <- future_map2_chr(cm2$text_sent, cm2$cregex, ~ {
+  result <- entity_phrase(text = .x, entity = .y, plot = FALSE)
+  if (is.null(result) || nrow(result) == 0) return(NA_character_)
+  result$phrase_words[1]
+}, .progress = TRUE)
+duration <- Sys.time()-start
 
-for (i in 1:nrow(cm2)) {
-  # Show progress
-  print(i)
-  # Check if phrase is already extracted in prior execution and skip if so
-  if(!is.na(cm2$country_phrase[i])){next}
-  # extract phrase words ...
-  current <- entity_phrase(text = cm2$text_sent[i], entity = cm2$cregex[i], plot = F)$phrase_words
-  # ... and add to data if a phrase could be extracted
-  if(length(current) == 0){next}
-  cm2$country_phrase[i] <- current
-}
+cm2$country_phrase <- phrases
+
+write_rds(cm2, paste0(data_path, "CountryMentions/allCMs_sentlevel_phrase-words_vec.rds"))
 
 
-write_rds(cm2, paste0(data_path, "CountryMentions/allCMs_sentlevel_phrase-words.rds"))
+# Sample checks
+i <- sample(1:nrow(cm2), 1)
+cm2$country_phrase[i]
+entity_phrase(cm2$text_sent[i], entity = cm2$cregex[i], plot = T)
 
 
