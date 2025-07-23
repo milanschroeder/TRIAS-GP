@@ -98,7 +98,7 @@ cm_doc <- cm %>% group_by(doc_key) %>%
 docs <- read_rds(paste0(data_path, "cleaned_data/data_doclevel.rds")  # nothing changed here, just doclevel metadata
 ) %>% left_join(., cm_doc, join_by(doc_key))
 
-allCMs_doclevel <- read_rds(paste0(data_path, "CountryMentions/OLD_allCMs_doclevel.rds")) # check & mimic structure
+allCMs_doclevel <- read_rds(paste0(data_path, "CountryMentions/old/OLD_allCMs_doclevel.rds")) # check & mimic structure
 
 names(allCMs_doclevel)[!names(allCMs_doclevel) %in% names(docs)]
 write_rds(docs, paste0(data_path, "CountryMentions/allCMs_doclevel.rds"))  
@@ -116,9 +116,9 @@ cm_para <- cm %>% group_by(text_id) %>%
 paras <- read_rds(paste0(data_path, "cleaned_data/data_paralevel.rds")  # nothing changed here, just doclevel metadata
 ) %>% left_join(., cm_para, join_by(text_id))
 
-allCMs_paralevel <- read_rds(paste0(data_path, "CountryMentions/allCMs_paralevel.rds"))
+allCMs_paralevel <- read_rds(paste0(data_path, "CountryMentions/old/OLD_allCMs_paralevel.rds"))
 
 names(allCMs_paralevel)[!names(allCMs_paralevel) %in% names(paras)]
-write_rds(paras, paste0(data_path, "CountryMentions/allCMs_doclevel.rds"))  
+write_rds(paras, paste0(data_path, "CountryMentions/allCMs_paralevel.rds"))  
 
 

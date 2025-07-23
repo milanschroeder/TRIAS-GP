@@ -58,7 +58,7 @@ phrases <- read_rds(paste0(data_path, "CountryMentions/allCMs_sentlevel_phrase-w
   mutate(token = country_phrase %>% str_squish() %>% str_to_lower()) %>% 
   select(-c(mentions:country_phrase)) %>% 
   left_join(., simils, join_by(token)) %>% 
-  filter(!is.na(friend_foe))
+  filter(!is.na(friend_foe)) # instead of na.rm = T -> much faster for some reason!
 
 
 # country scaling sentence level ####
