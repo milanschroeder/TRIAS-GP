@@ -197,63 +197,66 @@ ggsave("./output/glove_plots/ComparingScalingWeigthsSentenceLevel.png", comp.pl,
 
 
 # Entity Phrase based #####
-# countries:
-phrases <- read_rds(paste0(data_path, "CountryMentions/allCMs_sentlevel_phrase-words_vec.rds")) %>% 
-  left_join(., read_rds(paste0(data_path, "cleaned_data/data_sentlevel.rds")) %>% select(doc_id, date, sentence_id),
-            join_by(sentence_id)) %>% 
-  mutate(country_phrase = ifelse(is.na(country_phrase), 
-                                 text_sent %>% stringr::str_replace_all("[:punct:]| ", ","), 
-                                 country_phrase)) %>% 
-  separate_rows(., country_phrase, sep = ",") %>%
-  mutate(token = country_phrase %>% str_squish() %>% str_to_lower()) %>% 
-  select(-c(mentions:country_phrase)) %>% 
-  left_join(., simils, join_by(token))
-  
 
-entity_scaling <-
-  phrases %>%
-  group_by(sentence_id, iso2c, year) %>%
-  summarise(across(where(is.numeric), mean, na.rm = T)) %>%
-  ungroup()
+### !deprecated -> 03_7_phrase_scaling_along_glove.R
 
-write_rds(entity_scaling, paste0(data_path, "cleaned_data/scaling_glove_EntityPhrases.rds"))
-
-entity_scaling <-
-  phrases %>%
-  group_by(doc_id, iso2c, year) %>%
-  summarise(across(where(is.numeric), mean, na.rm = T)) %>%
-  ungroup()
-
-write_rds(entity_scaling, paste0(data_path, "cleaned_data/scaling_glove_EntityPhrases_doclevel.rds"))
-
-# IOs:
-phrases <- read_rds(paste0(data_path, "CountryMentions/IOs_phrase-words_vec.rds")) %>% 
-  left_join(., read_rds(paste0(data_path, "cleaned_data/data_sentlevel.rds")) %>% select(doc_id, date, sentence_id),
-            join_by(sentence_id)) %>% 
-  mutate(country_phrase = ifelse(is.na(country_phrase), 
-                                 text_sent %>% stringr::str_replace_all("[:punct:]| ", ","), 
-                                 country_phrase)) %>% 
-  separate_rows(., country_phrase, sep = ",") %>%
-  mutate(token = country_phrase %>% str_squish() %>% str_to_lower()) %>% 
-  select(-c(mentions:country_phrase)) %>% 
-  left_join(., simils, join_by(token))
-
-
-entity_scaling <-
-  phrases %>%
-  group_by(sentence_id, iso2c, year) %>%
-  summarise(across(where(is.numeric), mean, na.rm = T)) %>%
-  ungroup()
-
-write_rds(entity_scaling, paste0(data_path, "cleaned_data/scaling_glove_EntityPhrasesIO.rds"))
-
-entity_scaling <-
-  phrases %>%
-  group_by(doc_id, iso2c, year) %>%
-  summarise(across(where(is.numeric), mean, na.rm = T)) %>%
-  ungroup()
-
-write_rds(entity_scaling, paste0(data_path, "cleaned_data/scaling_glove_EntityPhrasesIO_doclevel.rds"))
-
-
-
+# # countries:
+# phrases <- read_rds(paste0(data_path, "CountryMentions/allCMs_sentlevel_phrase-words_vec.rds")) %>% 
+#   left_join(., read_rds(paste0(data_path, "cleaned_data/data_sentlevel.rds")) %>% select(doc_id, date, sentence_id),
+#             join_by(sentence_id)) %>% 
+#   mutate(country_phrase = ifelse(is.na(country_phrase), 
+#                                  text_sent %>% stringr::str_replace_all("[:punct:]| ", ","), 
+#                                  country_phrase)) %>% 
+#   separate_rows(., country_phrase, sep = ",") %>%
+#   mutate(token = country_phrase %>% str_squish() %>% str_to_lower()) %>% 
+#   select(-c(mentions:country_phrase)) %>% 
+#   left_join(., simils, join_by(token))
+#   
+# 
+# entity_scaling <-
+#   phrases %>%
+#   group_by(sentence_id, iso2c, year) %>%
+#   summarise(across(where(is.numeric), mean, na.rm = T)) %>%
+#   ungroup()
+# 
+# write_rds(entity_scaling, paste0(data_path, "cleaned_data/scaling_glove_EntityPhrases.rds"))
+# 
+# entity_scaling <-
+#   phrases %>%
+#   group_by(doc_id, iso2c, year) %>%
+#   summarise(across(where(is.numeric), mean, na.rm = T)) %>%
+#   ungroup()
+# 
+# write_rds(entity_scaling, paste0(data_path, "cleaned_data/scaling_glove_EntityPhrases_doclevel.rds"))
+# 
+# # IOs:
+# phrases <- read_rds(paste0(data_path, "CountryMentions/IOs_phrase-words_vec.rds")) %>% 
+#   left_join(., read_rds(paste0(data_path, "cleaned_data/data_sentlevel.rds")) %>% select(doc_id, date, sentence_id),
+#             join_by(sentence_id)) %>% 
+#   mutate(country_phrase = ifelse(is.na(country_phrase), 
+#                                  text_sent %>% stringr::str_replace_all("[:punct:]| ", ","), 
+#                                  country_phrase)) %>% 
+#   separate_rows(., country_phrase, sep = ",") %>%
+#   mutate(token = country_phrase %>% str_squish() %>% str_to_lower()) %>% 
+#   select(-c(mentions:country_phrase)) %>% 
+#   left_join(., simils, join_by(token))
+# 
+# 
+# entity_scaling <-
+#   phrases %>%
+#   group_by(sentence_id, iso2c, year) %>%
+#   summarise(across(where(is.numeric), mean, na.rm = T)) %>%
+#   ungroup()
+# 
+# write_rds(entity_scaling, paste0(data_path, "cleaned_data/scaling_glove_EntityPhrasesIO.rds"))
+# 
+# entity_scaling <-
+#   phrases %>%
+#   group_by(doc_id, iso2c, year) %>%
+#   summarise(across(where(is.numeric), mean, na.rm = T)) %>%
+#   ungroup()
+# 
+# write_rds(entity_scaling, paste0(data_path, "cleaned_data/scaling_glove_EntityPhrasesIO_doclevel.rds"))
+# 
+# 
+# 
