@@ -2,13 +2,14 @@
 # Project:  TRIAS - Geopolitics
 # Tasks:    Multivariate, cross-sectional analysis of how frequently 
 #           the Commission speaks about types of countries over time
-# Author:   @ChRauh (27.02.2025)
+# Author:   @ChRauh (22.07.2025)
 #########################################################################
 
 # Packages #####
 library(tidyverse) # Easily Install and Load the 'Tidyverse' CRAN v2.0.0
 library(countrycode) # Convert Country Names and Country Codes CRAN v1.4.0
 library(broom) # Convert Statistical Objects into Tidy Tibbles CRAN v1.0.4
+library(parameters)
 library(glue) # Interpreted String Literals CRAN v1.6.2
 library(grid)
 library(gridExtra) # Miscellaneous Functions for "Grid" Graphics CRAN v2.3
@@ -22,8 +23,8 @@ library(ggtext) # Improved Text Rendering Support for 'ggplot2' CRAN v0.1.2
 
 # data_path <- "~/Nextcloud/Shared/TRIAS Brückenprojekt/Daten/" # MS/WZB
 # data_path <- "C:/Users/rauh/NextCloudSync/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/WZB
-data_path <- "D:/WZB-Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/HP
-# data_path <- "C:/Users/rauh/Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/TP
+# data_path <- "D:/WZB-Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/HP
+data_path <- "C:/Users/rauh/Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/TP
 
 
 
@@ -53,8 +54,8 @@ cm <- read_rds(paste0(data_path, "CountryMentions/allCMs_doclevel.rds")) %>%
 cp <- read_rds(paste0(data_path, "external_data/CountryYearPanelComplete.rds")) 
 
 # Panel includes only countries that appear in one of the big IR data states (= official states at some point)
-length(unique(cp$iso2c)) # 213
-# Newsmap dictionary is somewhat broader
+length(unique(cp$iso2c)) # 241
+# Dictionary should be somewhat broader
 length(unique(cm$iso2c)) # 241
 # I reduce the country mentions to the cp sample to ensure consistency throughout - MILAN please check
 cm <- cm %>% 
@@ -64,7 +65,7 @@ cm <- cm %>%
 # We have every country in every year so that analyses below are consistent
 # no matter whether country was actually mentioned or not!
 # test <- cm %>% group_by(year) %>% summarise(countries = length(unique(iso2c)))
-# table(test$countries)
+# table(test$countries) # should be 241*40
 # rm(test)
 
 
@@ -137,6 +138,8 @@ pl.con <-
 ggsave("./output/descriptive_plots/ConcentrationOfCountryMentions_OverTime.png", pl.con, height = 10, width = 25, units = "cm")
 # ggsave("./output/descriptive_plots/ConcentrationOfCountryMentions_OverTime_noRU.png", pl.con, height = 10, width = 25, units = "cm")
 
+# What happened in 1998, 1999, and 2000 ?
+
 rm(pl.con, hhi, sum_shares)  
 
 
@@ -186,7 +189,7 @@ df <- mentions.ann %>% # Annual share of docs mentioning a specific foreign coun
 
 # Check completeness of explanatory variables
 df$exp_complete <- complete.cases(df[, 4:ncol(df)])
-sum(df$exp_complete) # 4601 of 6441, sigh
+sum(df$exp_complete) # 4538 of 6369, sigh
 
 # NAs by variable
 miss_vars <- colSums(is.na(df[, 4:ncol(df)])) %>% 
@@ -205,7 +208,8 @@ miss_vars <- colSums(is.na(df[, 4:ncol(df)])) %>%
 
 # Data available for modelling
 reg.df <- df %>% 
-  filter(!iso2c %in% c("RU", "UA")) %>% 
+  filter(!iso2c %in% c("OM")) %>% # Dictionary error - REMOVE LATER!!!
+  # filter(!iso2c %in% c("RU", "UA")) %>% 
   filter(exp_complete) %>% 
   select(-exp_complete)
 
@@ -215,15 +219,31 @@ table(reg.df$year) # Available n of country obs per year
 # Estimate salience models ####
 
 # The basic model
-# reg.formula <- paste0("doc_share ~ ",
-#                       paste(names(reg.df[4:ncol(reg.df)]), collapse = " + "))
-# glue(reg.formula)
+reg.formula <- paste0("doc_share ~ ",
+                      paste(names(reg.df[4:ncol(reg.df)]), collapse = " + "))
+glue(reg.formula)
 
 # Average model, full period
-# fit <-
-#   lm(glue(reg.formula),
-#    reg.df)
-# summary(fit)
+fit <-
+  lm(glue(reg.formula),
+   reg.df)
+summary(fit)
+
+pl.salience.full <-
+  model_parameters(fit, standardize = "refit") %>%
+  filter(Parameter != "(Intercept)") %>%
+  mutate(Parameter = fct_reorder(Parameter, Coefficient)) %>%
+  ggplot(aes(x = Parameter, y = Coefficient, ymin = CI_low, ymax = CI_high)) +
+  geom_pointrange() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "darkred")+
+  coord_flip() +
+  labs(title = "Salience: Which countries does the Commission mention?",
+       subtitle = "Full period, complete country/year obs only, SEs unclustered/underestimated",
+       y = "Standardized Coefficient", x = "Country characteristics\n") +
+  theme_bw()
+
+ggsave("./output/descriptive_plots/CrudeSalienceModelFullPeriod.png", pl.salience.full, height = 10, width = 25, units = "cm")
+
 
 # Function to estimate model by year and extract coefficents etc
 
@@ -284,6 +304,20 @@ coeff.full <-
 coeff <- rbind(coeff, coeff.full)
 coeff$full <- coeff$period == "Full\nperiod"
 
+ggplot(coeff.full %>% mutate(term = fct_reorder(term, estimate)) ,
+       aes(x = term, y = estimate, ymin = conf.low, ymax = conf.high)) +
+  geom_pointrange() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "darkred")+
+  coord_flip() +
+  labs(title = "Salience: Which countries does the Commission mention?",
+       subtitle = "Full period, complete country/year obs only, SEs unclustered/underestimated",
+       y = "Standardized Coefficient", x = "Country characteristics\n") +
+  theme_bw()
+
+ggsave("./output/multivariate_plots/SalienceModelFullPeriod.png", height = 10, width = 25, units = "cm")
+
+
+
 # Significant on 95% level?
 coeff$sig <- coeff$p.value < 0.05
 sum(coeff$sig)
@@ -322,6 +356,8 @@ coeff$labels <- coeff$term %>%
                     "Armed\nconflicts",
                     "NATO\nmember"))
 
+coeff$direc <- factor(coeff$direc, levels = c("neg", "ns", "pos"))
+
 # Plot
 
 pl.period <- 
@@ -335,7 +371,8 @@ pl.period <-
   # scale_x_continuous(breaks = seq(1985, 2020, 5), expand = c(0.02, 0)) +
   scale_x_discrete(expand = c(0.1, 0)) +
   scale_y_continuous(breaks = c(-.5,0,.5), expand = c(0,0)) +
-  scale_color_manual(values = c("darkred", "grey70", "blue"))+
+  # scale_color_manual(values = c("darkred", "grey70", "blue"))+
+  scale_color_manual(values = c("neg"  = "darkred", "ns" = "grey70", "pos" = "blue"), drop = F)+ # Ensure tha all factor levels are covered
   coord_cartesian(ylim = c(-1, 1))+
   labs(title = "By 5-year periods",
        x = "", y ="")+
@@ -362,7 +399,7 @@ pl.full <-
   # scale_x_continuous(breaks = seq(1985, 2020, 5), expand = c(0.02, 0)) +
   scale_x_discrete(expand = c(0.02, 0)) +
   scale_y_continuous(breaks = c(-.5,0,.5), expand = c(0,0)) +
-  scale_color_manual(values = c("darkred", "grey70", "blue"))+
+  scale_color_manual(values = c("neg"  = "darkred", "ns" = "grey70", "pos" = "blue"), drop = F)+
   coord_cartesian(ylim = c(-1, 1))+
   labs(title = "Average",
        x = "", y ="Standardized regression coefficients\n(with 95% confidence bands)\n")+
@@ -381,11 +418,11 @@ pl.comb <-
   plot_layout(widths = c(1,5))+
   plot_annotation(title = "Which kind of foreign countries does the Commission speak about?",
                   subtitle = "<br>How different country characteristics relate to how frequently the Commission<br> mentions these countries in its public communication.<br>Statistically significant estimates (p<.05)<br>marked in <span style='color:blue; font-weight:bold;'>blue (positive)</span> or <span style='color:darkred; font-weight:bold;'>red (negative)</span>.<br>",
-                  caption = "Multivariate linear regression models of the share of Commission documents mentioning a country.\nRussia & Ukraine excluded.",
+                  caption = "Multivariate linear regression models of the share of Commission documents mentioning a country.",
                   theme = theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
                                 plot.subtitle = element_markdown(hjust = 0.5)))  
 
-ggsave("./output/multivariate_plots/CountrySalience_Explained_noRU.png", pl.comb, 
+ggsave("./output/multivariate_plots/CountrySalience_Explained.png", pl.comb, 
        width = 16, height = 20, units = "cm")
 
 # full country year panel
