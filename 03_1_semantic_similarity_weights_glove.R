@@ -21,12 +21,56 @@ library(patchwork)
 # fix randomness
 set.seed(1905)
 
+
+compute_relative_polarity <- function(word_vectors, lower_seeds, upper_seeds) {
+  
+  # --- Input checks ---
+  all_seeds <- unique(c(lower_seeds, upper_seeds))
+  missing_seeds <- setdiff(all_seeds, colnames(word_vectors))
+  if (length(missing_seeds) > 0) {
+    warning("These seed words are missing from the word vector matrix and will be ignored: ",
+            paste(missing_seeds, collapse = ", "))
+  }
+  lower_seeds <- intersect(lower_seeds, colnames(word_vectors))
+  upper_seeds <- intersect(upper_seeds, colnames(word_vectors))
+  
+  # --- Compute pole centroids ---
+  lower_vec <- word_vectors %>%
+    select(all_of(lower_seeds)) %>%
+    rowMeans()
+  
+  upper_vec <- word_vectors %>%
+    select(all_of(upper_seeds)) %>%
+    rowMeans()
+  
+  # --- Direction vector ---
+  direction_vec <- upper_vec - lower_vec
+  
+  # --- Cosine similarity Function ---
+  cosine_similarity <- function(x, y) {
+    sum(x * y) / (sqrt(sum(x^2)) * sqrt(sum(y^2)))
+  }
+  
+  # --- Score all tokens in the embedding matrix ---
+  scores <- apply(word_vectors, 2, function(word_vec) {
+    cosine_similarity(word_vec, direction_vec)
+  })
+  
+  # --- Return as tibble ---
+  tibble(
+    token = colnames(word_vectors),
+    polarity_score = scores
+  )
+}
+
+
 # Paths ####
 # Needed as big files currently not part of the repo
 
 # data_path <- "~/Nextcloud/Shared/TRIAS Brückenprojekt/Daten/" # MS/WZB
+# data_path <- "~/Nextcloud/Shared/TRIAS Brückenprojekt/Daten/" # MS/WZB
 # data_path <- "C:/Users/rauh/NextCloudSync/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/WZB
-data_path <- "D:/WZB-Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/HP
+# data_path <- "D:/WZB-Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/HP
 
 
 # Key geographical entities to remove before scaling ####
@@ -291,17 +335,21 @@ conf_simils <-
   relocate(rank.simil) # rank by similarity to seed vector
 
 
+coop_confl <- compute_relative_polarity(word_vectors = glove, lower_seeds = conf_vocab, upper_seeds = coop_vocab)
+  
+
 # Scale
 sc <- coop_simils %>% 
   select(token, coop) %>% 
   left_join(conf_simils %>% 
               select(token, conf),
-            by = "token") %>% 
-  mutate(coop_confl = coop-conf) %>% 
+            join_by(token)) %>% 
+  mutate(coop_confl_old = coop-conf) %>%
+  left_join(., coop_confl %>% rename(coop_confl = polarity_score), join_by(token)) %>% 
   arrange(desc(coop_confl))
 
 # Export token weights
-# write_rds(sc, paste0(data_path, "glove_models/SemSimilWeights-CooperationConflict.rds", compress = "gz"))
+ write_rds(sc, paste0(data_path, "glove_models/SemSimilWeights-CooperationConflict.rds", compress = "gz"))
 
 
 # Visualize (ind scales)
@@ -427,17 +475,22 @@ foe_simils <-
   relocate(rank.simil) # rank by similarity to seed vector
 
 
+sc <- read_rds(paste0(data_path, "glove_models/SemSimilWeights-FriendFoe.rdsgz"))
+
+friend_foe <- compute_relative_polarity(word_vectors = glove, lower_seeds = foe_vocab, upper_seeds = friend_vocab)
+
 # Scale
 sc <- friend_simils %>% 
   select(token, friend) %>% 
   left_join(foe_simils %>% 
               select(token, foe),
-            by = "token") %>% 
-  mutate(friend_foe = friend-foe) %>% 
+            by = join_by(token)) %>% 
+  mutate(friend_foe_old = friend-foe) %>% 
+  left_join(., friend_foe %>% rename(friend_foe = polarity_score), join_by(token)) %>%  
   arrange(desc(friend_foe))
 
 # Export token weights
-# write_rds(sc, paste0(data_path, "glove_models/SemSimilWeights-FriendFoe.rds", compress = "gz"))
+write_rds(sc, paste0(data_path, "glove_models/SemSimilWeights-FriendFoe.rds", compress = "gz"))
 
 
 # Visualize (ind scales)

@@ -57,7 +57,8 @@ phrases <- read_rds(paste0(data_path, "CountryMentions/allCMs_sentlevel_phrase-w
   separate_rows(., country_phrase, sep = ",") %>%
   mutate(token = country_phrase %>% str_squish() %>% str_to_lower()) %>% 
   select(-c(mentions:country_phrase)) %>% 
-  left_join(., simils, join_by(token))
+  left_join(., simils, join_by(token)) %>% 
+  filter(!is.na(friend_foe))
 
 
 # country scaling sentence level ####
@@ -65,7 +66,7 @@ phrases <- read_rds(paste0(data_path, "CountryMentions/allCMs_sentlevel_phrase-w
 entity_scaling_sent <-
   phrases %>%
   group_by(sent_id, iso2c, year) %>%
-  summarise(across(where(is.numeric), mean, na.rm = T)) %>%
+  summarise(across(where(is.numeric), mean)) %>%
   ungroup()
 
 write_rds(entity_scaling_sent, paste0(data_path, "cleaned_data/scaling_glove_EntityPhrases.rds"))
@@ -75,7 +76,7 @@ entity_scaling_doc <-
   phrases %>% 
   select(-c(text_id), sent_id) %>% 
   group_by(doc_id, iso2c, year) %>%
-  summarise(across(where(is.numeric), mean, na.rm = T)) %>%
+  summarise(across(where(is.numeric), mean)) %>%
   ungroup()
 
 write_rds(entity_scaling_doc, paste0(data_path, "cleaned_data/scaling_glove_EntityPhrases_doclevel.rds"))
@@ -87,7 +88,7 @@ entity_scaling_para <-
   phrases %>% 
   select(-c(doc_id, sent_id)) %>% 
   group_by(text_id, iso2c, year) %>%
-  summarise(across(where(is.numeric), mean, na.rm = T)) %>%
+  summarise(across(where(is.numeric), mean)) %>%
   ungroup()
 
 write_rds(entity_scaling_para, paste0(data_path, "cleaned_data/scaling_glove_EntityPhrases_paralevel.rds"))
@@ -100,7 +101,7 @@ write_rds(entity_scaling_para, paste0(data_path, "cleaned_data/scaling_glove_Ent
 entity_scaling_sent <-
   phrases %>%
   group_by(sent_id, iso2c, year) %>%
-  summarise(across(where(is.numeric), sum, na.rm = T)) %>%
+  summarise(across(where(is.numeric), sum)) %>%
   ungroup()
 
 write_rds(entity_scaling_sent, paste0(data_path, "cleaned_data/additive_scaling_glove_EntityPhrases.rds"))
@@ -110,7 +111,7 @@ entity_scaling_doc <-
   phrases %>% 
   select(-c(text_id), sent_id) %>% 
   group_by(doc_id, iso2c, year) %>%
-  summarise(across(where(is.numeric), sum, na.rm = T)) %>%
+  summarise(across(where(is.numeric), sum)) %>%
   ungroup()
 
 write_rds(entity_scaling_doc, paste0(data_path, "cleaned_data/additive_scaling_glove_EntityPhrases_doclevel.rds"))
@@ -122,7 +123,7 @@ entity_scaling_para <-
   phrases %>% 
   select(-c(doc_id, sent_id)) %>% 
   group_by(text_id, iso2c, year) %>%
-  summarise(across(where(is.numeric), sum, na.rm = T)) %>%
+  summarise(across(where(is.numeric), sum)) %>%
   ungroup()
 
 write_rds(entity_scaling_para, paste0(data_path, "cleaned_data/additive_scaling_glove_EntityPhrases_paralevel.rds"))
