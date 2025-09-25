@@ -49,9 +49,9 @@ sent <- read_rds(paste0(data_path, "cleaned_data/data_sentlevel.rds")) %>%
 
 # Country mentions - long form, English sentences only
 cm <- read_rds(paste0(data_path, "CountryMentions/CMs_sentlevel_EN_long.rds")) %>% 
-  left_join(glove %>% select(sentence_id, coop_confl_glove, friend_foe_glove), by = "sentence_id") %>% 
-  left_join(lsx %>% select(sentence_id, coop_confl_lsx), by = "sentence_id") %>% 
-  left_join(sent %>% select(sentence_id, doc_type, year))
+  # left_join(glove %>% select(sent, coop_confl_glove, friend_foe_glove), by = "sentence_id") %>% 
+  # left_join(lsx %>% select(sentence_id, coop_confl_lsx), by = "sentence_id") %>% 
+  left_join(sent %>% select(sent_id, doc_type, year))
 
 # Filter country mentions 
 # to include only those states in larger data sets
@@ -60,7 +60,7 @@ cm <- read_rds(paste0(data_path, "CountryMentions/CMs_sentlevel_EN_long.rds")) %
 countries <- read_rds(paste0(data_path, "external_data/CountryYearPanelComplete.rds")) %>% 
   select(iso2c, year, eu_member)
 
-cm <- cm %>% 
+cm_external <- cm %>% 
   filter(iso2c %in% unique(countries$iso2c)) %>% 
   left_join(countries, by = c("iso2c", "year")) %>% 
   filter(!eu_member) %>% 
@@ -96,7 +96,7 @@ world$iso2c <- world$iso_a2 # For matching
 df85_89 <- cm %>% 
   filter(year >= 1985 & year <= 1989) %>% 
   group_by(iso2c) %>% 
-  summarise(cc85_89 = mean(coop_confl_glove, na.rm = T),
+  summarise(#cc85_89 = mean(coop_confl_glove, na.rm = T),
             mentions85_89 = n()) %>% 
   ungroup() %>% 
   mutate(mentions_sc85_89 = scales::rescale(mentions85_89, to = c(0, 1)),
@@ -106,7 +106,7 @@ df85_89 <- cm %>%
 df90_00 <- cm %>% 
   filter(year >= 1990 & year <= 2000) %>% 
   group_by(iso2c) %>% 
-  summarise(cc90_00 = mean(coop_confl_glove, na.rm = T),
+  summarise(#cc90_00 = mean(coop_confl_glove, na.rm = T),
             mentions90_00 = n()) %>% 
   ungroup() %>% 
   mutate(mentions_sc90_00 = scales::rescale(mentions90_00, to = c(0, 1)),
@@ -116,7 +116,7 @@ df90_00 <- cm %>%
 df01_10 <- cm %>% 
   filter(year >= 2001 & year <= 2010) %>% 
   group_by(iso2c) %>% 
-  summarise(cc01_10 = mean(coop_confl_glove, na.rm = T),
+  summarise(#cc01_10 = mean(coop_confl_glove, na.rm = T),
             mentions01_10 = n()) %>% 
   ungroup() %>% 
   mutate(mentions_sc01_10 = scales::rescale(mentions01_10, to = c(0, 1)),
@@ -126,7 +126,7 @@ df01_10 <- cm %>%
 df11_23 <- cm %>% 
   filter(year >= 2011 & year <= 2023) %>% 
   group_by(iso2c) %>% 
-  summarise(cc11_23 = mean(coop_confl_glove, na.rm = T),
+  summarise(#cc11_23 = mean(coop_confl_glove, na.rm = T),
             mentions11_23 = n()) %>% 
   ungroup() %>% 
   mutate(mentions_sc11_23 = scales::rescale(mentions11_23, to = c(0, 1)),
@@ -135,7 +135,7 @@ df11_23 <- cm %>%
 
 dfall <- cm %>% 
   group_by(iso2c) %>% 
-  summarise(ccall = mean(coop_confl_glove, na.rm = T),
+  summarise(#ccall = mean(coop_confl_glove, na.rm = T),
             mentionsall = n()) %>% 
   ungroup() %>% 
   mutate(mentions_scall = scales::rescale(mentionsall, to = c(0, 1)),

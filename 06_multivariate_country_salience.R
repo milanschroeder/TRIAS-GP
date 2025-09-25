@@ -89,7 +89,7 @@ focused_docs <- cm.foreign %>%
 
 # Share of documents mentioning each country - full period
 mentions.full <- cm.foreign %>% 
-  filter(!iso2c %in% c("RU", "UA")) %>%
+ # filter(!iso2c %in% c("RU", "UA")) %>%
   group_by(iso2c) %>% 
   summarise(doc_share = mean(as.logical(mentions))) %>% 
   ungroup()

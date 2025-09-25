@@ -1,0 +1,818 @@
+burundi
+burundian*
+bujumbura
+djibouti
+djiboutian*
+eritrea
+eritrean*
+asmara
+ethiopia
+ethiopian*
+addis ababa
+kenya
+kenyan*
+nairobi
+comoros
+comorian*
+moroni
+madagascar
+madagas*
+malagas*
+antananarivo
+mauritius
+mauritian*
+port louis
+malawi
+malawian*
+lilongwe
+mozambique
+mozambican*
+maputo
+reunion
+réunion
+réunionese
+reunionese*
+reunionnais
+rwanda
+rwandan*
+kigali
+seychelles
+seychelloise
+seychellois
+somalia
+somali*
+somalian*
+mogadishu
+tanzania
+tanzanian*
+dodoma
+dar es salaam
+uganda
+ugandan*
+kampala
+mayotte
+mahoran*
+mamoudzou
+zambia
+zambian*
+lusaka
+zimbabwe
+zimbabwean*
+harare
+angola
+angolan*
+luanda
+democratic republic congo
+dr congo
+drc
+democratic republic congolese
+dr congolese
+kinshasa
+central african republic
+central african*
+bangui
+congo
+congo republic
+congolese
+brazzaville
+cameroon
+cameroonian*
+yaounde
+yaoundé
+gabon
+gabonese
+libreville
+equatorial guinea
+equatorial guinean*
+equatoguinean*
+malabo
+sao tome and principe
+são tomé und príncipe
+sao tomean*
+chad
+chadian*
+n'djamena
+algeria
+algerian*
+algiers
+egypt
+egyptian*
+cairo
+western sahara
+western saharan*
+el aaiun
+libya
+libyan*
+tripoli
+morocco
+moroccan*
+rabat
+sudan
+sudanese
+khartoum
+south sudan
+s sudan
+s sudanese
+juba
+tunisia
+tunisian*
+tunis
+botswana
+botswanan*
+gaborone
+lesotho
+lesothonian*
+maseru
+namibia
+namibian*
+windhoek
+swaziland
+swazi*
+lobamba
+mbabane
+south africa
+s african
+sa
+south african*
+s african*
+cape town
+johannesburg
+pretoria
+burkina faso
+burkinabe*
+ouagadougou
+benin
+beninese
+beninois
+porto novo
+ivory coast
+côte d'ivoire
+i coast
+ivorian*
+yamoussoukro
+abidjan
+cape verde
+cape verdean*
+praia
+ghana
+ghanaian*
+accra
+gambia
+gambian*
+banjul
+guinea
+guinean*
+conakry
+guinea bissau
+guinea bissauan*
+bissau
+liberia
+liberian*
+monrovia
+mali
+malian*
+bamako
+mauritania
+mauritanian*
+nouakchott
+niger
+nigerien*
+niamey
+nigeria
+nigerian*
+abuja
+lagos
+saint helena
+st helena
+saint helenian*
+st helenian*
+jamestown
+sierra leone
+sierra leonean*
+freetown
+senegal
+senegalese
+dakar
+togo
+togolese
+lome
+lomé
+antigua and barbuda
+antiguan*
+barbudan*
+anguilla
+anguillan*
+the valley
+aruba
+aruban*
+oranjestad
+barbados
+barbadian*
+bridgetown
+saint barthelemy
+saint-barthelemy
+saint-barthélemy
+st barthelemy
+barthelemois
+gustavia
+bonaire
+bonairean*
+kralendijk
+bahamas
+bahamian*
+nassau
+cuba
+cuban*
+havana
+curacao
+curacaoan*
+willemstad
+commonwealth of dominica
+commonwealth dominican*
+roseau
+dominican republic
+dominican*
+santo domingo
+grenada
+grenadian*
+saint george's
+st george's
+guadeloupe
+guadeloupean*
+basse-terre
+haiti
+haitian*
+port au prince
+port-au-prince
+jamaica
+jamaican*
+kingston
+saint kitts and nevis
+st kitts and nevis
+kittitian*
+nevisian*
+basseterre
+cayman islands
+cayman island*
+caymanian*
+saint lucia
+st lucia
+saint lucian*
+st lucian*
+castries
+saint martin
+st martin
+saint martiner*
+st martiner*
+marigot
+martinique
+martinican*
+montserrat
+montserratian*
+brades
+puerto rico
+puerto rican*
+san juan
+sint maarten
+st maarten
+sint maartener*
+st maartener*
+philipsburg
+turks and caicos islands
+turks and caicos island*
+cockburn town
+trinidad and tobago
+trinidad
+trinidadian*
+tobagonian*
+trinbagonian*
+port of spain
+saint vincent and the grenadines
+st vincent and the grenadines
+vincentian*
+kingstown
+british virgin islands
+virgin island*
+road town
+united states virgin islands
+us virgin islands
+united states virgin island*
+us virgin island*
+charlotte amalie
+belize
+belizean*
+belmopan
+costa rica
+costa rican*
+ticos
+san jose
+guatemala
+guatemalan*
+guatemala city
+honduras
+honduran*
+tegucigalpa
+mexico
+mexican*
+mexico city
+nicaragua
+nicaraguan*
+managua
+panama
+panamanian*
+panama city
+el salvador
+salvadoran*
+san salvador
+argentina
+argentine*
+argentinian*
+buenos aires
+bolivia
+bolivian*
+sucre
+la paz
+brazil
+brazilian*
+brasilia
+sao paulo
+rio
+chile
+chilean*
+santiago
+colombia
+colombian*
+bogota
+ecuador
+ecuadorian*
+quito
+falkland islands
+falkland island*
+french guiana
+french guianese
+guyana
+guyanese
+peru
+peruvian*
+lima
+paraguay
+paraguayan*
+asuncion
+suriname
+surinamese
+paramaribo
+uruguay
+uruguayan*
+montevideo
+venezuela
+venezuelan*
+caracas
+bermuda
+bermudan*
+canada
+canadian*
+ottawa
+toronto
+quebec
+greenland
+greenlander*
+nuuk
+saint pierre and miquelon
+st pierre and miquelon
+saint pierrais
+miquelonnais
+saint pierre
+united states
+american*
+washington
+new york
+kyrgyzstan
+kyrgyz*
+bishkek
+kazakhstan
+kazakh*
+astana
+tajikistan
+tajiks*
+dushanbe
+turkmenistan
+turkmen*
+ashhabad
+uzbekistan
+uzbek*
+tashkent
+china
+chinese
+beijing
+shanghai
+hong kong
+hongkongese
+japan
+japanese
+tokyo
+north korea
+n korea
+north korean*
+n korean*
+dprk
+pyongyang
+south korea
+s korea
+south korean
+s korean*
+seoul
+mongolia
+mongolian*
+ulan bator
+macao
+macau
+macanese
+taiwan
+taiwanese
+taipei
+afghanistan
+afghan*
+kabul
+bangladesh
+bangladeshi*
+dhaka
+dacca
+bhutan
+bhutanese
+thimphu
+india
+indian*
+mumbai
+new delhi
+iran
+iranian*
+tehran
+sri lanka
+sri lankan*
+colombo
+maldives
+maldivian*
+nepal
+nepali
+nepalese
+katmandu
+kathmandu
+pakistan
+pakistani*
+islamabad
+brunei
+bruneian*
+indonesia
+indonesian*
+jakarta
+cambodia
+cambodian*
+phnom penh
+laos
+laotian*
+vientiane
+myanmar
+burma
+myanmarese
+burmese
+yangon
+naypyidaw
+malaysia
+malaysian*
+kuala lumpur
+putrajaya
+philippines
+philippine
+filipino*
+filipina*
+manila
+singapore
+singaporean*
+thailand
+thai
+bangkok
+east timor
+timor leste
+east timorese
+dili
+viet nam
+vietnam
+vietnamese
+hanoi
+ho chi minh
+saigon
+united arab emirates
+uae
+emirati*
+emiri*
+dubai
+abu dhabi
+armenia
+armenian*
+yerevan
+azerbaijan
+azerbaijani*
+azeri*
+baku
+bahrain
+bahraini*
+manama
+cyprus
+cypriot*
+nicosia
+georgia
+georgian*
+tbilisi
+israel
+israeli*
+jerusalem
+iraq
+iraqi*
+baghdad
+jordan
+jordanian*
+amman
+kuwait
+kuwaiti*
+kuwait city
+lebanon
+lebanese
+beirut
+oman
+omani*
+muscat
+palestine
+palestinian*
+gaza city
+gaza
+west bank
+qatar
+qatari*
+doha
+saudi arabia
+saudi*
+riyadh
+syria
+syrian*
+damascus
+turkey
+turk*
+ankara
+istanbul
+yemen
+yemeni*
+sana'a
+bulgaria
+bulgarian*
+sofia
+belarus
+belarusian*
+minsk
+czech republic
+czech*
+prague
+hungary
+hungarian*
+budapest
+moldova
+moldovan*
+chisinau
+poland
+polish
+pole*
+warsaw
+romania
+romanian*
+bucharest
+russia
+russian*
+moscow
+slovakia
+slovak*
+bratislava
+ukraine
+ukrainian*
+kiev
+kyiv
+aland islands
+aland island*
+alandish
+mariehamn
+denmark
+danish
+dane*
+copenhagen
+estonia
+estonian*
+tallinn
+finland
+finnish
+finn*
+helsinki
+faeroe islands
+faeroe island*
+faroese*
+torshavn
+uk
+united kingdom
+britain
+british
+briton*
+brit*
+london
+guernsey
+guernseie*
+saint peter port
+st peter port
+ireland
+irish
+dublin
+isle of man
+manx
+iceland
+icelandic
+icelander*
+reykjavik
+channel islands
+channel island*
+lithuania
+lithuanian*
+vilnius
+latvia
+latvian*
+riga
+norway
+norwegian*
+oslo
+sweden
+swedish
+swede*
+stockholm
+svalbard and jan mayen islands
+andorra
+andorran*
+albania
+albanian*
+tirana
+bosnia
+bosnian*
+bosnia and herzegovina
+herzegovina
+sarajevo
+spain
+spanish
+spaniard*
+madrid
+barcelona
+gibraltar
+gibraltarian*
+llanitos
+greece
+greek*
+athens
+croatia
+croatian*
+croat*
+zagreb
+italy
+italian*
+rome
+kosovo
+kosovan*
+pristina
+montenegro
+montenegrin*
+podgorica
+macedonia
+macedonian*
+skopje
+malta
+maltese
+valletta
+portugal
+portuguese
+lisbon
+serbia
+serbian*
+serb*
+belgrade
+slovenia
+slovenian*
+slovene*
+ljubljana
+san marino
+sammarinese
+vatican
+austria
+austrian*
+vienna
+belgium
+belgian*
+brussels
+switzerland
+swiss*
+zurich
+bern
+germany
+german*
+berlin
+frankfurt
+france
+french*
+paris
+liechtenstein
+liechtenstein*
+vaduz
+luxembourg
+luxembourgish
+luxembourger*
+monaco
+monacan*
+monegasque*
+netherlands
+holland
+dutch
+hollander*
+amsterdam
+australia
+australian*
+aussie*
+oz
+canberra
+sydney
+cook islands
+cook island*
+avarua
+norfolk island
+norfolk islander*
+new zealand
+n zealand
+nz
+new zealander*
+kiwi*
+wellington
+auckland
+fiji
+fijian*
+new caledonia
+new caledonian*
+noumea
+papua new guinea
+papua new guinean*
+papuan*
+port moresby
+solomon islands
+solomon island*
+honiara
+vanuatu
+vanuatuan*
+port vila
+micronesia
+micronesian*
+palikir
+guam
+guamanian*
+hagatna
+kiribati
+kiribati*
+tarawa
+marshall islands
+marshall island*
+marshallese
+majuro
+northern mariana islands
+northern mariana island*
+capital hill
+nauru
+nauruan*
+yaren
+palau
+palauan*
+melekeok
+american samoa
+american samoan*
+pago pago
+niue
+niuean*
+alofi
+french polynesia
+french polynesian*
+papeete
+pitcairn islands
+pitcairn island*
+adamstown
+tokelau
+tokelauan*
+nukunonu
+tonga
+tongan*
+nuku'alofa
+tuvalu
+tuvaluan*
+funafuti
+wallis and futuna islands
+wallis and futuna island*
+mata utu
+samoa
+samoan*
+apia

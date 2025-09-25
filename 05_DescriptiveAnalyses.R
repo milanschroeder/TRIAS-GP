@@ -113,8 +113,8 @@ pl.all <-
   stat_summary(fun = mean, geom = "line", aes(group = 1), color = "black", linewidth = 0.4) +
   # stat_summary(fun.data = mean_cl_normal, geom = "pointrange", color = "black", size = .2) + # Confidence bands not visible
   stat_summary(fun = mean, geom = "point", color = "black", size = .7) + 
-  scale_colour_gradient2(low = "blue",
-                         high = "red",
+  scale_colour_gradient2(low = "red",
+                         high = "blue",
                          mid = "grey50",
                          midpoint = mean_cm_ffg, 
                          limits = c(mean_cm_ffg-2*sd_cm_ffg,
@@ -138,8 +138,8 @@ pl.us <-
   geom_jitter(width = .3, alpha = .3, shape = 1, size = .2, aes(color = friend_foe), stroke = .2)+
   stat_summary(fun = mean, geom = "line", aes(group = 1), color = "black", linewidth = 0.4) +
   stat_summary(fun = mean, geom = "point", color = "black", size = .7) + 
-  scale_colour_gradient2(low = "blue",
-                         high = "red",
+  scale_colour_gradient2(low = "red",
+                         high = "blue",
                          mid = "grey50",
                          midpoint = mean_cm_ffg, 
                          limits = c(mean_cm_ffg-2*sd_cm_ffg,
@@ -162,8 +162,8 @@ pl.br <-
   geom_jitter(width = .3, alpha = .3, shape = 1, size = .2, aes(color = friend_foe), stroke = .2)+
   stat_summary(fun = mean, geom = "line", aes(group = 1), color = "black", linewidth = 0.4) +
   stat_summary(fun = mean, geom = "point", color = "black", size = .7) + 
-  scale_colour_gradient2(low = "blue",
-                         high = "red",
+  scale_colour_gradient2(low = "red",
+                         high = "blue",
                          mid = "grey50",
                          midpoint = mean_cm_ffg, 
                          limits = c(mean_cm_ffg-2*sd_cm_ffg,
@@ -187,8 +187,8 @@ pl.ru <-
   geom_jitter(width = .3, alpha = .3, shape = 1, size = .2, aes(color = friend_foe), stroke = .2)+
   stat_summary(fun = mean, geom = "line", aes(group = 1), color = "black", linewidth = 0.4) +
   stat_summary(fun = mean, geom = "point", color = "black", size = .7) + 
-  scale_colour_gradient2(low = "blue",
-                         high = "red",
+  scale_colour_gradient2(low = "red",
+                         high = "blue",
                          mid = "grey50",
                          midpoint = mean_cm_ffg, 
                          limits = c(mean_cm_ffg-2*sd_cm_ffg,
@@ -211,8 +211,8 @@ pl.in <-
   geom_jitter(width = .3, alpha = .3, shape = 1, size = .2, aes(color = friend_foe), stroke = .2)+
   stat_summary(fun = mean, geom = "line", aes(group = 1), color = "black", linewidth = 0.4) +
   stat_summary(fun = mean, geom = "point", color = "black", size = .7) + 
-  scale_colour_gradient2(low = "blue",
-                         high = "red",
+  scale_colour_gradient2(low = "red",
+                         high = "blue",
                          mid = "grey50",
                          midpoint = mean_cm_ffg, 
                          limits = c(mean_cm_ffg-2*sd_cm_ffg,
@@ -236,8 +236,8 @@ pl.cn <-
   geom_jitter(width = .3, alpha = .3, shape = 1, size = .2, aes(color = friend_foe), stroke = .2)+
   stat_summary(fun = mean, geom = "line", aes(group = 1), color = "black", linewidth = 0.4) +
   stat_summary(fun = mean, geom = "point", color = "black", size = .7) + 
-  scale_colour_gradient2(low = "blue",
-                         high = "red",
+  scale_colour_gradient2(low = "red",
+                         high = "blue",
                          mid = "grey50",
                          midpoint = mean_cm_ffg, 
                          limits = c(mean_cm_ffg-2*sd_cm_ffg,
@@ -260,8 +260,8 @@ pl.za <-
   geom_jitter(width = .3, alpha = .3, shape = 1, size = .2, aes(color = friend_foe), stroke = .2)+
   stat_summary(fun = mean, geom = "line", aes(group = 1), color = "black", linewidth = 0.4) +
   stat_summary(fun = mean, geom = "point", color = "black", size = .7) + 
-  scale_colour_gradient2(low = "blue",
-                         high = "red",
+  scale_colour_gradient2(low = "red",
+                         high = "blue",
                          mid = "grey50",
                          midpoint = mean_cm_ffg, 
                          limits = c(mean_cm_ffg-2*sd_cm_ffg,
@@ -382,8 +382,8 @@ pl.all <-
   scale_x_continuous(expand = c(0,0))+
   scale_y_continuous(expand = c(0,0))+
   scale_alpha_continuous(range = c(.1, 1), limits = c(0,1))+
-  scale_fill_gradient2(low = "blue",
-                       high = "red",
+  scale_fill_gradient2(low = "red",
+                       high = "blue",
                        mid = "grey50",
                        na.value = "white",
                        midpoint = mean(dfall$ffall, na.rm = T), 
@@ -408,8 +408,8 @@ pl.85_89 <-
   scale_x_continuous(expand = c(0,0))+
   scale_y_continuous(expand = c(0,0))+
   scale_alpha_continuous(range = c(.1, 1), limits = c(0,1))+
-  scale_fill_gradient2(low = "blue",
-                       high = "red",
+  scale_fill_gradient2(low = "red",
+                       high = "blue",
                        mid = "grey50",
                        na.value = "white",
                        midpoint = mean(dfall$ffall, na.rm = T), 
@@ -435,8 +435,8 @@ pl.90_00 <-
   scale_x_continuous(expand = c(0,0))+
   scale_y_continuous(expand = c(0,0))+
   scale_alpha_continuous(range = c(.1, 1), limits = c(0,1))+
-  scale_fill_gradient2(low = "blue",
-                       high = "red",
+  scale_fill_gradient2(low = "red",
+                       high = "blue",
                        mid = "grey50",
                        na.value = "white",
                        midpoint = mean(dfall$ffall, na.rm = T), 
@@ -462,8 +462,8 @@ pl.01_10 <-
   scale_x_continuous(expand = c(0,0))+
   scale_y_continuous(expand = c(0,0))+
   scale_alpha_continuous(range = c(.1, 1), limits = c(0,1))+
-  scale_fill_gradient2(low = "blue",
-                       high = "red",
+  scale_fill_gradient2(low = "red",
+                       high = "blue",
                        mid = "grey50",
                        na.value = "white",
                        midpoint = mean(dfall$ffall, na.rm = T), 
@@ -488,8 +488,8 @@ pl.11_23 <-
   scale_x_continuous(expand = c(0,0))+
   scale_y_continuous(expand = c(0,0))+
   scale_alpha_continuous(range = c(.1, 1), limits = c(0,1))+
-  scale_fill_gradient2(low = "blue",
-                       high = "red",
+  scale_fill_gradient2(low = "red",
+                       high = "blue",
                        mid = "grey50",
                        na.value = "white",
                        midpoint = mean(dfall$ffall, na.rm = T), 

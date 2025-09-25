@@ -18,13 +18,20 @@ test <- xlsx::read.xlsx("./data/country_names_toCheck.xlsx", sheetIndex = 2) %>%
          term = str_remove(term, "\\*"),
          regex = case_when(
            !is.na(regex) ~ regex,
-           !is.na(full) ~ str_c("\\b", term, "\\b"),
+           !is.na(full) ~ str_c("\\\\b", term, "\\\\b"),
            !is.na(partly) ~ term,
+           T ~ NA
+         ),
+         regex_capture_full = case_when(
+           !is.na(regex_full) ~ regex_full,
+           !is.na(full) ~ str_c("\\\\b", term, "\\\\b"),
+           !is.na(partly) ~ str_c("\\\\w*", term, "\\\\w*"),
            T ~ NA
          )) %>% 
            filter(!is.na(regex)) %>% 
   group_by(iso2c) %>% 
-  summarise(regex = str_c("(?i)", str_c(regex, collapse = "|"))) %>% 
+  summarise(regex = str_c("(?i)", str_c(regex, collapse = "|")),
+            regex_capture_full = str_c("(?i)", str_c(regex_capture_full, collapse = "|"))) %>% 
   ungroup()
   
 
@@ -41,9 +48,9 @@ countrynames <-
 
 # another qualitative inspection....
 
-
+# add regexes from countrycodes after checks: ####
   test %<>%  
-  bind_rows(., xlsx::read.xlsx("./data/cc_country_names_toCheck.xlsx", sheetIndex = 2, colIndex = 2:3))
+  bind_rows(., xlsx::read.xlsx("./data/cc_country_names_toCheck.xlsx", sheetIndex = 2, colIndex = 2:4))
 
  
    write_rds(test, "./data/country_dictionary.rds")
