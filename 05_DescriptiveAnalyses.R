@@ -1,18 +1,18 @@
 #########################################################################
 # Project:  TRIAS - Geopolitics
 # Tasks:    Describe selected country/scale values
-# Author:   @ChRauh (25.02.2025)
+# Author:   @ChRauh (26.09.2025)
 #########################################################################
 
 # Packages #####
 library(tidyverse) # Easily Install and Load the 'Tidyverse' CRAN v2.0.0
-library(countrycode)
+library(countrycode) # Convert Country Names and Country Codes CRAN v1.6.1
 library(GGally) # Extension to 'ggplot2' CRAN v2.1.2
 library(grid)
-library(gridExtra)
-library(gtable)
-library(patchwork)
-library(ggtext)
+library(gridExtra) # Miscellaneous Functions for "Grid" Graphics CRAN v2.3
+library(gtable) # Arrange 'Grobs' in Tables CRAN v0.3.6
+library(patchwork) # The Composer of Plots CRAN v1.3.0
+library(ggtext) # Improved Text Rendering Support for 'ggplot2' CRAN v0.1.2
 
 
 
@@ -22,41 +22,34 @@ library(ggtext)
 # data_path <- "~/Nextcloud/Shared/TRIAS Brückenprojekt/Daten/" # MS/WZB
 # data_path <- "C:/Users/rauh/NextCloudSync/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/WZB
 # data_path <- "D:/WZB-Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/HP
-# data_path <- "C:/Users/rauh/Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/TP
+data_path <- "C:/Users/rauh/Nextcloud/Shared/Idee Brückenprojekt Ju-Chri/Daten/" # CR/TP
+
 
 
 # Load the data #####
 
-# Scale values of sentences
-# Picking three - the two Glove Scale with pluasible face validity, and the LSX scale validated in Russia paper
+# Scale values of country phrases (friend_foe scale only)
 glove <- read_rds(paste0(data_path, "cleaned_data/scaling_glove_EntityPhrases.rds"))  %>%
-  mutate(year = as.numeric(year),
-         gti = max(gti, na.rm = T) + min(gti, na.rm = T) - gti, # Get directionality right, more "hostile" language should have higher values (correct downstream)
-         coop_confl = max(coop_confl, na.rm = T) + min(coop_confl, na.rm = T) - coop_confl) #%>% 
-  #rename_with(~ paste0(., ""), .cols = 2:9)
-
-# lsx <- read_rds(paste0(data_path, "cleaned_data/scaling_lsx_sentlevel.rds")) %>% 
-#   select(-doc_id) %>% 
-#   rename_with(~ paste0(., "_lsx"), .cols = 2:9)
+  select(c(1:5, friend_foe)) %>% 
+  mutate(year = as.numeric(year))
 
 # Sentence data
 sent <- read_rds(paste0(data_path, "cleaned_data/data_sentlevel.rds")) %>% 
-  # mutate(wordcount = str_count(text_sent, "\\s+")) %>% 
   mutate(year = str_extract(date, "^[0-9]{4}") %>% as.numeric()) %>% 
-  left_join(glove %>% select(sent_id, coop_confl, friend_foe), by = join_by(sent_id)) %>% 
-  #left_join(lsx %>% select(sent_id, coop_confl_lsx), join_by(sent_id)) %>% 
-  filter(lang_sent == "en" &
+  # left_join(glove %>% select(sent_id, friend_foe), by = join_by(sent_id)) %>% 
+  filter(lang_sent == "en" & # only English sentences
            doc_type %in% c("Country insights", "Daily news", "News", "Press release", "Read-out", "Speech", "Statement") &
-           !clearly_table & !mostly_numbers & !is_link) # only English sentences
+           !clearly_table & !mostly_numbers & !is_link) 
 
 # Country mentions - long form, English sentences only
 cm <- read_rds(paste0(data_path, "CountryMentions/CMs_sentlevel_EN_long.rds")) %>% 
-  left_join(glove %>% select(sent_id, iso2c, coop_confl, friend_foe), join_by(sent_id, iso2c)) %>% 
+  left_join(glove %>% select(sent_id, iso2c, friend_foe), join_by(sent_id, iso2c)) %>% 
   #left_join(lsx %>% select(sent_id, coop_confl_lsx), join_by("sent_id")) %>% 
   left_join(sent %>% select(sent_id, doc_type), join_by(sent_id))
 
+
 # Filter country mentions 
-# to include only those states in larger data sets
+# to include only those states in larger IR/IO data sets
 # and exclude EU member states
 
 countries <- read_rds(paste0(data_path, "external_data/CountryYearPanelComplete.rds")) %>% 
@@ -74,32 +67,25 @@ cm <- cm %>%
   filter(doc_type %in% c("Country insights", "Daily news", "News", "Press release", "Read-out", "Speech", "Statement"))
 
 # Clean up
-rm(glove, lsx)
+rm(glove)
 gc()
 
 
 # Benchmarks ####
+# Means across all sentences would be interesting, too ...
 
-mean_cm_ccg <- mean(cm$coop_confl, na.rm = T) # Means in foreign country mentions
-mean_cm_ffg <- mean(cm$friend_foe, na.rm = T)
-#mean_cm_ccl <- mean(cm$coop_confl_lsx, na.rm = T)
-
-sd_cm_ccg <- sd(cm$coop_confl, na.rm = T) # sds in foreign country mentions
-sd_cm_ffg <- sd(cm$friend_foe, na.rm = T)
-#sd_cm_ccl <- sd(cm$coop_confl_lsx, na.rm = T)
-
-mean_sent_ccg <- mean(sent$coop_confl, na.rm = T) # Means in all English sentences
-mean_sent_ffg <- mean(sent$friend_foe, na.rm = T)
-#mean_sent_ccl <- mean(sent$coop_confl_lsx, na.rm = T)
+mean_cm_ffg <- mean(cm$friend_foe, na.rm = T) # Means in foreign country mentions
+sd_cm_ffg <- sd(cm$friend_foe, na.rm = T) # sds in foreign country mentions
+se_cm_ffg <- sd_cm_ffg/sqrt(nrow(cm)) # Standard error
+t_crit <- qt(0.95, df = nrow(cm) - 1) # T-Value, for 95%
+lo95_cm_ffg <- mean_cm_ffg - t_crit * se_cm_ffg
+hi95_cm_ffg <- mean_cm_ffg + t_crit * se_cm_ffg
+rm(t_crit, se_cm_ffg)
 
 country_means <- cm %>% # Country means
-  select(iso2c, country, coop_confl, friend_foe#, coop_confl_lsx
-         ) %>% 
+  select(iso2c, country, friend_foe) %>% 
   group_by(iso2c, country) %>% 
-  summarise(coop_confl = mean(coop_confl, na.rm = T),
-            friend_foe = mean(friend_foe, na.rm = T)#,
-  #          coop_confl_lsx = mean(coop_confl_lsx, na.rm = T)
-            ) %>% 
+  summarise(friend_foe = mean(friend_foe, na.rm = T)) %>% 
   ungroup()
 
 
@@ -121,15 +107,16 @@ pl.all <-
                                     mean_cm_ffg+2*sd_cm_ffg),
                          oob=scales::squish)+
   scale_x_continuous(breaks = seq(1985, 2020, 5), expand = c(0.02, 0)) +
-  coord_cartesian(ylim = c(-.2, +.2)) +
+  coord_cartesian(ylim = c(-.2, +.4)) +
   labs(title = "All foreign countries",
-       y = "friendly/adversarial\nlanguage\n",
+       y = "<span style='color:red; font-weight:bold;'>Adversarial</span> vs. <span style='color:blue; font-weight:bold;'>friendly</span> language<br>",
        x = "Years")+
   theme_bw()+
   theme(legend.position = "none",
-        plot.title = element_text(face = "bold", size = 10, hjust = .5),
+        plot.title = element_text(face = "bold", size = 12, hjust = .5),
         axis.text = element_text(color = "black"),
-        panel.grid = element_blank())
+        panel.grid = element_blank(),
+        axis.title = element_markdown(size = 12))
 
 
 pl.us <- 
@@ -146,13 +133,13 @@ pl.us <-
                                     mean_cm_ffg+2*sd_cm_ffg),
                          oob=scales::squish)+
   scale_x_continuous(breaks = seq(1985, 2020, 5), expand = c(0.02, 0)) +
-  coord_cartesian(ylim = c(-.2, +.2)) +
+  coord_cartesian(ylim = c(-.2, +.4)) +
   labs(title = "United States",
        y = "",
        x = "")+
   theme_bw()+
   theme(legend.position = "none",
-        plot.title = element_text(face = "bold", size = 10, hjust = .5),
+        plot.title = element_text(face = "bold", size = 12, hjust = .5),
         axis.text = element_text(color = "black"),
         panel.grid = element_blank())
 
@@ -170,13 +157,13 @@ pl.br <-
                                     mean_cm_ffg+2*sd_cm_ffg),
                          oob=scales::squish)+
   scale_x_continuous(breaks = seq(1985, 2020, 5), expand = c(0.02, 0)) +
-  coord_cartesian(ylim = c(-.2, +.2)) +
+  coord_cartesian(ylim = c(-.2, +.4)) +
   labs(title = "Brazil",
        y = "",
        x = "")+
   theme_bw()+
   theme(legend.position = "none",
-        plot.title = element_text(face = "bold", size = 10, hjust = .5),
+        plot.title = element_text(face = "bold", size = 12, hjust = .5),
         axis.text = element_text(color = "black"),
         panel.grid = element_blank())
 
@@ -195,13 +182,13 @@ pl.ru <-
                                     mean_cm_ffg+2*sd_cm_ffg),
                          oob=scales::squish)+
   scale_x_continuous(breaks = seq(1985, 2020, 5), expand = c(0.02, 0)) +
-  coord_cartesian(ylim = c(-.2, +.2)) +
+  coord_cartesian(ylim = c(-.2, +.4)) +
   labs(title = "Russia",
        y = "",
        x = "")+
   theme_bw()+
   theme(legend.position = "none",
-        plot.title = element_text(face = "bold", size = 10, hjust = .5),
+        plot.title = element_text(face = "bold", size = 12, hjust = .5),
         axis.text = element_text(color = "black"),
         panel.grid = element_blank())
 
@@ -219,13 +206,13 @@ pl.in <-
                                     mean_cm_ffg+2*sd_cm_ffg),
                          oob=scales::squish)+
   scale_x_continuous(breaks = seq(1985, 2020, 5), expand = c(0.02, 0)) +
-  coord_cartesian(ylim = c(-.2, +.2)) +
+  coord_cartesian(ylim = c(-.2, +.4)) +
   labs(title = "India",
        y = "",
        x = "")+
   theme_bw()+
   theme(legend.position = "none",
-        plot.title = element_text(face = "bold", size = 10, hjust = .5),
+        plot.title = element_text(face = "bold", size = 12, hjust = .5),
         axis.text = element_text(color = "black"),
         panel.grid = element_blank())
 
@@ -244,13 +231,13 @@ pl.cn <-
                                     mean_cm_ffg+2*sd_cm_ffg),
                          oob=scales::squish)+
   scale_x_continuous(breaks = seq(1985, 2020, 5), expand = c(0.02, 0)) +
-  coord_cartesian(ylim = c(-.2, +.2)) +
+  coord_cartesian(ylim = c(-.2, +.4)) +
   labs(title = "China",
        y = "",
        x = "")+
   theme_bw()+
   theme(legend.position = "none",
-        plot.title = element_text(face = "bold", size = 10, hjust = .5),
+        plot.title = element_text(face = "bold", size = 12, hjust = .5),
         axis.text = element_text(color = "black"),
         panel.grid = element_blank())
 
@@ -268,13 +255,13 @@ pl.za <-
                                     mean_cm_ffg+2*sd_cm_ffg),
                          oob=scales::squish)+
   scale_x_continuous(breaks = seq(1985, 2020, 5), expand = c(0.02, 0)) +
-  coord_cartesian(ylim = c(-.2, +.2)) +
+  coord_cartesian(ylim = c(-.2, +.4)) +
   labs(title = "South Africa",
        y = "",
        x = "")+
   theme_bw()+
   theme(legend.position = "none",
-        plot.title = element_text(face = "bold", size = 10, hjust = .5),
+        plot.title = element_text(face = "bold", size = 12, hjust = .5),
         axis.text = element_text(color = "black"),
         panel.grid = element_blank())
 
@@ -286,11 +273,11 @@ pl.lower <- (pl.us+pl.br)/(pl.ru+pl.in)/(pl.cn+pl.za)
 # Combined plot
 pl <- (pl.all+pl.lower)+
   # plot_layout(heights = c(.7,1))+
-  plot_annotation(title = "How the European Commission publicly communicates about foreign countries",
-                  subtitle = "Each dot represents one sentence in which a non-EU state is mentioned.<br>Y-axis and color indicate whether this sentence uses <span style='color:blue; font-weight:bold;'>friendly</span>, <span style='color:grey50; font-weight:bold;'>neutral</span>, or <span style='color:red; font-weight:bold;'>adversarial</span> language.",
-                  caption = "Based on all country insights, daily news, press releases, read-outs, statements, and Commissioner speeches the Commission has published 1985-2023.",
+  plot_annotation(title = "How the European Commission publicly communicates about foreign countries\n",
+                  subtitle = "Each dot represents a single mention of a non-EU state (binned by publication year).<br>Y-axis and color indicate whether this sentence uses <span style='color:red; font-weight:bold;'>adversarial</span>, <span style='color:grey50; font-weight:bold;'>neutral</span>, or  <span style='color:blue; font-weight:bold;'>friendly</span> language.<br>",
+                  caption = "Based on all country insights, daily news, press releases, read-outs, statements, and Commissioner speeches the Commission has published 1985-2023.\nBlack solid lines indicate annual averages, dotted line indicates grand average across all foreign country mentions.",
                   theme = theme(plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
-                        plot.subtitle = element_markdown(hjust = 0.5)))  
+                        plot.subtitle = element_markdown(size = 14, hjust = 0.5)))  
 
 
 # ggsave("./output/descriptive_plots/new/FriendFoeCountries_OverTime.png", pl, height = 32, width = 24, units = "cm")
@@ -305,10 +292,10 @@ gc()
 # Maps ####
 
 # Packages - for mapping
-library(sf)
-library(rnaturalearth)
-library(rnaturalearthdata)
-library(ggspatial)
+library(sf) # Simple Features for R CRAN v1.0-21
+library(rnaturalearth) # World Map Data from Natural Earth CRAN v1.0.1
+library(rnaturalearthdata) # World Vector Map Data from Natural Earth Used in 'rnaturalearth' CRAN v1.0.0
+library(ggspatial) # Spatial Data Framework for ggplot2 CRAN v1.1.9
 
 # Get a 'world' data frame from rnaturalearth
 world <- ne_countries(scale = "medium", returnclass = "sf")
@@ -943,3 +930,4 @@ gc()
 
 
   
+

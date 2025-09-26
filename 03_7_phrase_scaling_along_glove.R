@@ -1,4 +1,4 @@
-# Entity Phrase based sacling
+# Entity Phrase based scaling
 
 library(tidyverse)
 library(magrittr)
